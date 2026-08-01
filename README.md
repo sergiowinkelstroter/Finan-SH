@@ -41,17 +41,20 @@ valor vai sem escape.
 
 ### 3. Schema do banco
 
+Em desenvolvimento local, o jeito mais rápido é aplicar o schema direto:
+
 ```bash
-npm run db:push   # aplica o schema direto (bom para desenvolvimento)
+npm run db:push   # aplica o schema direto (bom para iterar)
 npm run db:seed   # cria os usuários Sergio/Hellen e os defaults de settings
 ```
 
-Para gerar migrations versionadas em vez de `push` direto:
-
-```bash
-npm run db:generate
-npm run db:migrate
-```
+Migrations versionadas ficam em `drizzle/` (geradas com `npm run db:generate`,
+offline — não precisa de conexão com o banco). O script `build` já roda
+`drizzle-kit migrate && tsx src/db/seed.ts` antes do `next build`, então
+**o deploy na Vercel aplica as migrations e semeia o banco sozinho** — não
+precisa rodar nada manualmente contra o banco de produção. `db:seed` é
+idempotente (`ON CONFLICT DO NOTHING`), então rodar de novo a cada deploy
+não duplica nada.
 
 ### 4. Rodar localmente
 
@@ -81,8 +84,8 @@ saídas, não é controle de acesso.
 1. Importe o repositório na Vercel.
 2. Configure as três variáveis de ambiente (seção acima) no projeto —
    `SHARED_PASSWORD_HASH` vai **sem** escapar os `$` no dashboard da Vercel.
-3. Rode `npm run db:push` (ou as migrations) apontando para o banco de
-   produção antes do primeiro deploy, e `npm run db:seed` uma vez.
+3. Deploy. O próprio `build` aplica as migrations e semeia o banco (seção
+   acima) — nada para rodar manualmente contra a produção.
 
 ## Estrutura
 
