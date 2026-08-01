@@ -1,0 +1,126 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+:root {
+  /* Paleta — seção 9 do spec. Único gradiente do app: violeta → azul, no medidor. */
+  --branco: #ffffff;
+  --nevoa: #f6f5fd;
+  --violeta: #6c4cf0;
+  --azul: #2e6be6;
+  --tinta: #1a1830;
+  --bruma: #6b6885;
+  --traco: #e7e4f8;
+  --menta: #0ea88c;
+  --rosa: #e2496b;
+
+  --secondary-tint: #edebfb;
+  --accent-tint: #eaf1fd;
+
+  --background: var(--nevoa);
+  --foreground: var(--tinta);
+
+  --card: var(--branco);
+  --card-foreground: var(--tinta);
+
+  --popover: var(--branco);
+  --popover-foreground: var(--tinta);
+
+  --primary: var(--violeta);
+  --primary-foreground: var(--branco);
+
+  --secondary: var(--secondary-tint);
+  --secondary-foreground: var(--tinta);
+
+  --muted: var(--secondary-tint);
+  --muted-foreground: var(--bruma);
+
+  --accent: var(--accent-tint);
+  --accent-foreground: var(--tinta);
+
+  --destructive: var(--rosa);
+  --destructive-foreground: var(--branco);
+
+  --success: var(--menta);
+  --success-foreground: var(--branco);
+
+  --border: var(--traco);
+  --input: var(--traco);
+  --ring: var(--violeta);
+
+  /* 8px controles, 12px cards — aplicado via utilitário nos componentes */
+  --radius: 0.5rem;
+  --radius-card: 0.75rem;
+}
+
+@theme inline {
+  --color-branco: var(--branco);
+  --color-nevoa: var(--nevoa);
+  --color-violeta: var(--violeta);
+  --color-azul: var(--azul);
+  --color-tinta: var(--tinta);
+  --color-bruma: var(--bruma);
+  --color-traco: var(--traco);
+  --color-menta: var(--menta);
+  --color-rosa: var(--rosa);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-card);
+  --radius-xl: calc(var(--radius-card) + 4px);
+
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-bricolage);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--violeta);
+    outline-offset: 2px;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
