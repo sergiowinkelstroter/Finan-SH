@@ -43,8 +43,13 @@ export function FaturaRow({
           <div className="flex flex-col">
             <span className="font-medium text-foreground">{card.nome}</span>
             <span className="text-xs text-muted-foreground">
-              fecha dia {card.diaFechamento} · vence dia {card.diaVencimento}
+              fecha dia {card.diaFechamento} · vence {formatDataCurta(fatura.vencimento)}
             </span>
+            {status !== "paga" && fatura.valorCents > 0 && fatura.vencimento < hojeISO() && (
+              <Badge variant="destructive" className="mt-1 w-fit">
+                vencida
+              </Badge>
+            )}
           </div>
           <div className="flex flex-col items-end gap-1">
             <ValorEfetivo

@@ -21,31 +21,58 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CategoriaInput, CheckCompartilhada } from "@/components/categoria-input";
 import { competenciaAtualISO } from "@/lib/dates";
-import { parseReaisParaCents } from "@/lib/money";
-import { criarCompra } from "@/server/compras-actions";
+import { formatCentsSemSimbolo, parseReaisParaCents } from "@/lib/money";
+import { criarCompra, editarCompra } from "@/server/compras-actions";
 
 type Cartao = { id: number; nome: string };
 type Usuario = { id: number; nome: string };
 
+type CompraExistente = {
+  id: number;
+  cardId: number;
+  descricao: string;
+  valorTotalCents: number;
+  qtdParcelas: number;
+  primeiraCompetencia: string;
+  compradorId: number | null;
+  categoria: string | null;
+  compartilhada: boolean;
+};
+
 export function CompraFormDialog({
   cartoes,
   usuarios,
+  compra,
+  trigger,
+  categorias = [],
 }: {
   cartoes: Cartao[];
   usuarios: Usuario[];
+  compra?: CompraExistente;
+  trigger?: React.ReactNode;
+  categorias?: string[];
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  const [cardId, setCardId] = useState(cartoes[0] ? String(cartoes[0].id) : "");
-  const [descricao, setDescricao] = useState("");
-  const [valorTotal, setValorTotal] = useState("");
-  const [qtdParcelas, setQtdParcelas] = useState("1");
-  const [primeiraCompetencia, setPrimeiraCompetencia] = useState(
-    competenciaAtualISO().slice(0, 7),
+  const [cardId, setCardId] = useState(
+    compra ? String(compra.cardId) : cartoes[0] ? String(cartoes[0].id) : "",
   );
-  const [compradorId, setCompradorId] = useState("none");
+  const [descricao, setDescricao] = useState(compra?.descricao ?? "");
+  const [valorTotal, setValorTotal] = useState(
+    compra ? formatCentsSemSimbolo(compra.valorTotalCents) : "",
+  );
+  const [qtdParcelas, setQtdParcelas] = useState(compra ? String(compra.qtdParcelas) : "1");
+  const [primeiraCompetencia, setPrimeiraCompetencia] = useState(
+    compra?.primeiraCompetencia.slice(0, 7) ?? competenciaAtualISO().slice(0, 7),
+  );
+  const [compradorId, setCompradorId] = useState(
+    compra?.compradorId ? String(compra.compradorId) : "none",
+  );
+  const [categoria, setCategoria] = useState(compra?.categoria ?? "");
+  const [compartilhada, setCompartilhada] = useState(compra?.compartilhada ?? true);
 
   function reset() {
     setDescricao("");
@@ -53,23 +80,30 @@ export function CompraFormDialog({
     setQtdParcelas("1");
     setPrimeiraCompetencia(competenciaAtualISO().slice(0, 7));
     setCompradorId("none");
+    setCategoria("");
+    setCompartilhada(true);
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
       try {
-        await criarCompra({
+        const payload = {
+          id: compra?.id,
           cardId: Number(cardId),
           descricao,
           valorTotalCents: parseReaisParaCents(valorTotal),
           qtdParcelas: Number(qtdParcelas),
           primeiraCompetencia: `${primeiraCompetencia}-01`,
           compradorId: compradorId === "none" ? null : Number(compradorId),
-        });
-        toast.success("Compra cadastrada.");
+          categoria: categoria || null,
+          compartilhada,
+        };
+        if (compra) await editarCompra(payload);
+        else await criarCompra(payload);
+        toast.success(compra ? "Compra atualizada." : "Compra cadastrada.");
         setOpen(false);
-        reset();
+        if (!compra) reset();
       } catch {
         toast.error("Não deu para salvar. Confira os campos.");
       }
@@ -83,13 +117,15 @@ export function CompraFormDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus /> Nova compra
-        </Button>
+        {trigger ?? (
+          <Button>
+            <Plus /> Nova compra
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Compra parcelada</DialogTitle>
+          <DialogTitle>{compra ? "Editar compra" : "Compra parcelada"}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -180,6 +216,19 @@ export function CompraFormDialog({
               </Select>
             </div>
           </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="categoria">Categoria (opcional)</Label>
+            <CategoriaInput id="categoria" value={categoria} onChange={setCategoria} sugestoes={categorias} />
+          </div>
+
+          <CheckCompartilhada checked={compartilhada} onChange={setCompartilhada} />
+
+          {compra && (
+            <p className="text-xs text-muted-foreground">
+              Ao salvar, as parcelas são recalculadas a partir do valor, da quantidade e da 1ª fatura.
+            </p>
+          )}
 
           <DialogFooter>
             <Button type="submit" disabled={pending}>

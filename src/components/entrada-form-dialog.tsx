@@ -34,6 +34,8 @@ type EntradaExistente = {
   valorCents: number;
   tipo: string;
   competencia: string | null;
+  vigenciaInicio?: string | null;
+  vigenciaFim?: string | null;
 };
 
 export function EntradaFormDialog({
@@ -60,7 +62,12 @@ export function EntradaFormDialog({
     entrada?.competencia?.slice(0, 7) ?? competenciaAtualISO().slice(0, 7),
   );
 
+  const [vigInicio, setVigInicio] = useState(entrada?.vigenciaInicio ?? "");
+  const [vigFim, setVigFim] = useState(entrada?.vigenciaFim ?? "");
+
   function reset() {
+    setVigInicio("");
+    setVigFim("");
     setDescricao("");
     setValor("");
     setTipo("fixa");
@@ -79,6 +86,8 @@ export function EntradaFormDialog({
           tipo,
           userId: userId === "none" ? null : Number(userId),
           competencia: tipo === "extra" ? `${competencia}-01` : null,
+          vigenciaInicio: tipo === "fixa" ? vigInicio || null : null,
+          vigenciaFim: tipo === "fixa" ? vigFim || null : null,
         });
         toast.success("Entrada salva.");
         setOpen(false);
@@ -178,6 +187,25 @@ export function EntradaFormDialog({
               </div>
             )}
           </div>
+
+          {tipo === "fixa" && (
+            <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="vigInicio">Vale a partir de</Label>
+                  <Input id="vigInicio" type="date" value={vigInicio} onChange={(e) => setVigInicio(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="vigFim">Até (opcional)</Label>
+                  <Input id="vigFim" type="date" value={vigFim} onChange={(e) => setVigFim(e.target.value)} />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Mudou o salário? Encerre esta entrada e crie outra: o histórico dos meses
+                passados continua com o valor antigo.
+              </p>
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="submit" disabled={pending}>

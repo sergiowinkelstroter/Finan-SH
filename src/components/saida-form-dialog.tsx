@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CategoriaInput, CheckCompartilhada } from "@/components/categoria-input";
 import { hojeISO } from "@/lib/dates";
 import { formatCentsSemSimbolo, parseReaisParaCents } from "@/lib/money";
 import { salvarSaida } from "@/server/saidas-actions";
@@ -34,13 +35,16 @@ type SaidaExistente = {
   data: string;
   categoria: string | null;
   pagoPor: number | null;
+  compartilhada?: boolean;
 };
 
 export function SaidaFormDialog({
   usuarios,
   saida,
   trigger,
+  categorias = [],
 }: {
+  categorias?: string[];
   usuarios: Usuario[];
   saida?: SaidaExistente;
   trigger?: React.ReactNode;
@@ -53,6 +57,7 @@ export function SaidaFormDialog({
   const [data, setData] = useState(saida?.data ?? hojeISO());
   const [categoria, setCategoria] = useState(saida?.categoria ?? "");
   const [pagoPor, setPagoPor] = useState(saida?.pagoPor ? String(saida.pagoPor) : "none");
+  const [compartilhada, setCompartilhada] = useState(saida?.compartilhada ?? true);
 
   function reset() {
     setDescricao("");
@@ -60,6 +65,7 @@ export function SaidaFormDialog({
     setData(hojeISO());
     setCategoria("");
     setPagoPor("none");
+    setCompartilhada(true);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -73,6 +79,7 @@ export function SaidaFormDialog({
           data,
           categoria: categoria || null,
           pagoPor: pagoPor === "none" ? null : Number(pagoPor),
+          compartilhada,
         });
         toast.success("Saída salva.");
         setOpen(false);
@@ -142,12 +149,7 @@ export function SaidaFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="categoria">Categoria (opcional)</Label>
-              <Input
-                id="categoria"
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
-                placeholder="Moradia, mercado…"
-              />
+              <CategoriaInput id="categoria" value={categoria} onChange={setCategoria} sugestoes={categorias} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Pago por</Label>
@@ -166,6 +168,8 @@ export function SaidaFormDialog({
               </Select>
             </div>
           </div>
+
+          <CheckCompartilhada checked={compartilhada} onChange={setCompartilhada} />
 
           <DialogFooter>
             <Button type="submit" disabled={pending}>
