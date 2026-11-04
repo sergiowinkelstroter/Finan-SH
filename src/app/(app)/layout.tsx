@@ -1,5 +1,6 @@
 import { getProfile } from "@/lib/auth";
 import { BottomNav } from "@/components/bottom-nav";
+import { Sidebar } from "@/components/sidebar";
 
 export default async function AppLayout({
   children,
@@ -9,8 +10,9 @@ export default async function AppLayout({
   const perfil = await getProfile();
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-24 pt-6">
+    <div className="min-h-screen bg-background lg:pl-64">
+      <Sidebar perfil={perfil} />
+      <main className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-12 lg:pt-10">
         {children}
       </main>
       <BottomNav perfil={perfil} />
