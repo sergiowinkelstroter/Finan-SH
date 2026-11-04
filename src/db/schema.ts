@@ -16,7 +16,7 @@ import {
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  nome: text("nome").notNull(),
+  nome: text("nome").notNull().unique("users_nome_unique"),
   cor: text("cor"),
 });
 

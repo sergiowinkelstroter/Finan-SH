@@ -15,6 +15,13 @@
       "when": 1793816642007,
       "tag": "0001_periodo_categorias_recorrencias",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793818176184,
+      "tag": "0002_usuarios_unicos",
+      "breakpoints": true
     }
   ]
 }
