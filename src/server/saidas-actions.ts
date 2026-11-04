@@ -4,7 +4,14 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { expenses } from "@/db/schema";
+import { normalizarCategoria } from "@/lib/categorias";
 import { saidaSchema, type SaidaInput } from "@/lib/validation";
+
+function revalidarSaidas() {
+  revalidatePath("/saidas");
+  revalidatePath("/analises");
+  revalidatePath("/");
+}
 
 export async function salvarSaida(input: SaidaInput) {
   const data = saidaSchema.parse(input);
@@ -12,8 +19,9 @@ export async function salvarSaida(input: SaidaInput) {
     descricao: data.descricao,
     valorCents: data.valorCents,
     data: data.data,
-    categoria: data.categoria || null,
+    categoria: normalizarCategoria(data.categoria),
     pagoPor: data.pagoPor ?? null,
+    compartilhada: data.compartilhada ?? true,
   };
 
   if (data.id) {
@@ -21,13 +29,10 @@ export async function salvarSaida(input: SaidaInput) {
   } else {
     await db.insert(expenses).values(values);
   }
-
-  revalidatePath("/saidas");
-  revalidatePath("/");
+  revalidarSaidas();
 }
 
 export async function excluirSaida(id: number) {
   await db.delete(expenses).where(eq(expenses.id, id));
-  revalidatePath("/saidas");
-  revalidatePath("/");
+  revalidarSaidas();
 }

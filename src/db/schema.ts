@@ -94,6 +94,9 @@ export const purchases = pgTable("purchases", {
   qtdParcelas: smallint("qtd_parcelas").notNull(),
   primeiraCompetencia: date("primeira_competencia").notNull(),
   compradorId: integer("comprador_id").references(() => users.id),
+  categoria: text("categoria"),
+  /** Entra no acerto do casal (divisão 50/50). */
+  compartilhada: boolean("compartilhada").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -129,6 +132,9 @@ export const incomes = pgTable(
     tipo: text("tipo").notNull(),
     competencia: date("competencia"),
     ativo: boolean("ativo").notNull().default(true),
+    /** Entradas fixas: primeiro/último dia em que valem (null = sem limite). */
+    vigenciaInicio: date("vigencia_inicio"),
+    vigenciaFim: date("vigencia_fim"),
   },
   (table) => [
     check("tipo_valid", sql`${table.tipo} in ('fixa','extra')`),
@@ -139,6 +145,21 @@ export const incomes = pgTable(
   ],
 );
 
+export const recurringExpenses = pgTable("recurring_expenses", {
+  id: serial("id").primaryKey(),
+  descricao: text("descricao").notNull(),
+  valorCents: bigint("valor_cents", { mode: "number" }).notNull(),
+  diaMes: smallint("dia_mes").notNull(),
+  categoria: text("categoria"),
+  pagoPor: integer("pago_por").references(() => users.id),
+  compartilhada: boolean("compartilhada").notNull().default(true),
+  inicio: date("inicio").notNull(),
+  fim: date("fim"),
+  ativo: boolean("ativo").notNull().default(true),
+  /** Último mês (dia 1) já materializado em `expenses`. */
+  ultimaGeracao: date("ultima_geracao"),
+});
+
 export const expenses = pgTable(
   "expenses",
   {
@@ -148,8 +169,19 @@ export const expenses = pgTable(
     data: date("data").notNull(),
     categoria: text("categoria"),
     pagoPor: integer("pago_por").references(() => users.id),
+    compartilhada: boolean("compartilhada").notNull().default(true),
+    recorrenciaId: integer("recorrencia_id").references(
+      () => recurringExpenses.id,
+      { onDelete: "set null" },
+    ),
   },
-  (table) => [index("expenses_data_idx").on(table.data)],
+  (table) => [
+    index("expenses_data_idx").on(table.data),
+    unique("expenses_recorrencia_data_unique").on(
+      table.recorrenciaId,
+      table.data,
+    ),
+  ],
 );
 
 export const budgets = pgTable("budgets", {
@@ -225,3 +257,13 @@ export const expensesRelations = relations(expenses, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+export const recurringExpensesRelations = relations(
+  recurringExpenses,
+  ({ one }) => ({
+    pagador: one(users, {
+      fields: [recurringExpenses.pagoPor],
+      references: [users.id],
+    }),
+  }),
+);

@@ -8,13 +8,19 @@ import { entradaSchema, type EntradaInput } from "@/lib/validation";
 
 export async function salvarEntrada(input: EntradaInput) {
   const data = entradaSchema.parse(input);
+  const fixa = data.tipo === "fixa";
+  if (fixa && data.vigenciaInicio && data.vigenciaFim && data.vigenciaFim < data.vigenciaInicio) {
+    throw new Error("A vigência termina antes de começar.");
+  }
   const values = {
     userId: data.userId ?? null,
     descricao: data.descricao,
     valorCents: data.valorCents,
     tipo: data.tipo,
     competencia: data.tipo === "extra" ? data.competencia! : null,
-    ativo: data.ativo ?? true,
+    vigenciaInicio: fixa ? (data.vigenciaInicio ?? null) : null,
+    vigenciaFim: fixa ? (data.vigenciaFim ?? null) : null,
+    ativo: true,
   };
 
   if (data.id) {
@@ -24,11 +30,15 @@ export async function salvarEntrada(input: EntradaInput) {
   }
 
   revalidatePath("/entradas");
+  revalidatePath("/projecao");
+  revalidatePath("/analises");
   revalidatePath("/");
 }
 
 export async function excluirEntrada(id: number) {
   await db.delete(incomes).where(eq(incomes.id, id));
   revalidatePath("/entradas");
+  revalidatePath("/projecao");
+  revalidatePath("/analises");
   revalidatePath("/");
 }

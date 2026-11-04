@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { budgets, settings } from "@/db/schema";
 
@@ -23,4 +23,16 @@ export async function listarTetos() {
   return db.query.budgets.findMany({
     orderBy: (b, { desc }) => [desc(b.competencia)],
   });
+}
+
+/** Teto de cada competência (o do mês, ou o padrão quando não definido). */
+export async function tetosPorMes(competencias: string[]) {
+  const [rows, padrao] = await Promise.all([
+    competencias.length
+      ? db.select().from(budgets).where(inArray(budgets.competencia, competencias))
+      : Promise.resolve([]),
+    getTetoPadraoCents(),
+  ]);
+  const definidos = new Map(rows.map((r) => [r.competencia, r.tetoCents]));
+  return new Map(competencias.map((c) => [c, definidos.get(c) ?? padrao]));
 }

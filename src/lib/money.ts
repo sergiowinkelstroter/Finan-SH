@@ -34,3 +34,17 @@ export function parseReaisParaCents(input: string): number {
   if (Number.isNaN(valor)) return 0;
   return Math.round(valor * 100);
 }
+
+/** "R$ 1,2 mil" / "R$ 850" — para rótulos de gráfico. */
+export function formatCompacto(cents: number): string {
+  const reais = Math.abs(cents) / 100;
+  const sinal = cents < 0 ? "-" : "";
+  if (reais >= 1_000_000) return `${sinal}${(reais / 1_000_000).toFixed(1).replace(".", ",")} mi`;
+  if (reais >= 10_000) return `${sinal}${Math.round(reais / 1000)} mil`;
+  if (reais >= 1_000) return `${sinal}${(reais / 1000).toFixed(1).replace(".", ",")} mil`;
+  return `${sinal}${Math.round(reais)}`;
+}
+
+export function formatPercentual(fracao: number, casas = 0): string {
+  return `${(fracao * 100).toFixed(casas).replace(".", ",")}%`;
+}

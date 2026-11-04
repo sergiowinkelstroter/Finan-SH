@@ -49,7 +49,12 @@ export const marcarFaturaPagaSchema = z.object({
 });
 export type MarcarFaturaPagaInput = z.infer<typeof marcarFaturaPagaSchema>;
 
+const categoriaSchema = z.string().trim().max(40).optional().nullable();
+
 export const compraSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  categoria: categoriaSchema,
+  compartilhada: z.boolean().optional(),
   cardId: z.coerce.number().int().positive(),
   descricao: z.string().trim().min(1, "Descreva a compra."),
   valorTotalCents: z.coerce.number().int().positive("Valor precisa ser maior que zero."),
@@ -67,6 +72,8 @@ export const entradaSchema = z
     valorCents: z.coerce.number().int().positive("Valor precisa ser maior que zero."),
     tipo: z.enum(["fixa", "extra"]),
     competencia: competenciaSchema.optional().nullable(),
+    vigenciaInicio: dataSchema.optional().nullable(),
+    vigenciaFim: dataSchema.optional().nullable(),
     ativo: z.boolean().optional(),
   })
   .refine((data) => (data.tipo === "fixa" ? !data.competencia : !!data.competencia), {
@@ -80,8 +87,9 @@ export const saidaSchema = z.object({
   descricao: z.string().trim().min(1, "Descreva a saída."),
   valorCents: z.coerce.number().int().positive("Valor precisa ser maior que zero."),
   data: dataSchema,
-  categoria: z.string().trim().optional().nullable(),
+  categoria: categoriaSchema,
   pagoPor: z.coerce.number().int().positive().optional().nullable(),
+  compartilhada: z.boolean().optional(),
 });
 export type SaidaInput = z.infer<typeof saidaSchema>;
 
@@ -109,3 +117,29 @@ export type SimularReservaInput = z.infer<typeof simularReservaSchema>;
 export const loginSchema = z.object({
   senha: z.string().min(1, "Digite a senha."),
 });
+
+export const recorrenciaSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  descricao: z.string().trim().min(1, "Descreva a recorrência."),
+  valorCents: z.coerce.number().int().positive("Valor precisa ser maior que zero."),
+  diaMes: z.coerce.number().int().min(1).max(31),
+  categoria: categoriaSchema,
+  pagoPor: z.coerce.number().int().positive().optional().nullable(),
+  compartilhada: z.boolean().optional(),
+  inicio: dataSchema,
+  fim: dataSchema.optional().nullable(),
+  ativo: z.boolean().optional(),
+});
+export type RecorrenciaInput = z.infer<typeof recorrenciaSchema>;
+
+export const metaReservaSchema = z.object({
+  /** 0 remove a meta. */
+  metaCents: z.coerce.number().int().nonnegative(),
+  /** Mês-alvo opcional, "yyyy-MM". */
+  prazo: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/, "Prazo inválido.")
+    .optional()
+    .nullable(),
+});
+export type MetaReservaInput = z.infer<typeof metaReservaSchema>;
