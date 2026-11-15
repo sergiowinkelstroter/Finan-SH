@@ -28,6 +28,7 @@ export function somarEntradasPorMes(todas: Entrada[], competencias: string[]) {
   for (const c of competencias) {
     let total = 0;
     for (const e of todas) {
+      if (!e.ativo) continue;
       if (e.tipo === "fixa") {
         if (fixaVale(e, c)) total += e.valorCents;
       } else if (e.competencia === c) {

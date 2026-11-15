@@ -92,7 +92,7 @@ export default async function EntradasPage({ searchParams }: { searchParams: Pro
             <Card key={e.id}>
               <CardContent className="flex items-center justify-between gap-3 p-4">
                 <div className="flex flex-col gap-1">
-                  <span className="font-medium text-foreground">{e.descricao}</span>
+                  <span className="flex items-center gap-2 font-medium text-foreground">{e.descricao}{!e.ativo && <Badge variant="muted">inativa</Badge>}</span>
                   <span className="text-xs text-muted-foreground">
                     {e.user?.nome ?? "—"}
                     {e.vigenciaInicio && ` · desde ${formatDataCurta(e.vigenciaInicio)}`}
@@ -129,7 +129,7 @@ export default async function EntradasPage({ searchParams }: { searchParams: Pro
             <Card key={e.id}>
               <CardContent className="flex items-center justify-between gap-3 p-4">
                 <div className="flex flex-col gap-1">
-                  <span className="font-medium text-foreground">{e.descricao}</span>
+                  <span className="flex items-center gap-2 font-medium text-foreground">{e.descricao}{!e.ativo && <Badge variant="muted">inativa</Badge>}</span>
                   <div className="flex items-center gap-1.5">
                     <Badge variant="muted">
                       {e.competencia ? competenciaLabel(e.competencia) : ""}

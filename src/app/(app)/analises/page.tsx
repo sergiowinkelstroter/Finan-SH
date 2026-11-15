@@ -140,7 +140,7 @@ export default async function AnalisesPage({ searchParams }: { searchParams: Pro
           <CardAcerto acerto={atual.acerto} usuarios={atual.usuarios} />
           <Card>
             <CardHeader>
-              <CardTitle>Maiores saídas avulsas</CardTitle>
+              <CardTitle>Maiores saídas</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-2.5">
               {atual.maioresSaidas.length === 0 ? (
@@ -153,6 +153,7 @@ export default async function AnalisesPage({ searchParams }: { searchParams: Pro
                       <span className="text-xs text-muted-foreground">
                         {formatDataCurta(s.data)}
                         {s.categoria ? ` · ${s.categoria}` : ""}
+                        {s.id < 0 ? " · previsão recorrente" : ""}
                       </span>
                     </span>
                     <span className="font-mono tabular text-tinta">{formatCents(s.valorCents)}</span>
@@ -166,7 +167,7 @@ export default async function AnalisesPage({ searchParams }: { searchParams: Pro
 
       <p className="text-xs text-muted-foreground">
         Cartões entram pelo valor efetivo da fatura de cada mês tocado pelo período (real, parcial ou estimado);
-        saídas avulsas pela data exata. Comparação feita com o período imediatamente anterior, de mesma duração.
+        saídas pela data exata, incluindo previsões virtuais de recorrências futuras. Comparação feita com o período imediatamente anterior, de mesma duração.
       </p>
     </div>
   );
