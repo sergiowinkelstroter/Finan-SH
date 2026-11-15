@@ -145,14 +145,14 @@ export default async function DashboardPage({
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">
-          <CardTitle>Últimas saídas</CardTitle>
+          <CardTitle>Saídas do mês</CardTitle>
           <Link href={`/saidas?mes=${periodo.de.slice(0, 7)}`} className="text-sm font-medium text-violeta hover:underline">
             Ver todas
           </Link>
         </CardHeader>
         <CardContent className="flex flex-col gap-2.5">
           {analise.ultimasSaidas.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma saída avulsa neste mês.</p>
+            <p className="text-sm text-muted-foreground">Nenhuma saída neste mês.</p>
           ) : (
             analise.ultimasSaidas.map((s) => (
               <div key={s.id} className="flex items-center justify-between gap-3 text-sm">
@@ -161,6 +161,7 @@ export default async function DashboardPage({
                   <span className="text-xs text-muted-foreground">
                     {formatDataCurta(s.data)}
                     {s.categoria ? ` · ${s.categoria}` : ""}
+                    {s.virtual ? " · previsão recorrente" : ""}
                   </span>
                 </span>
                 <span className="font-mono tabular text-tinta">{formatCents(s.valorCents)}</span>

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { and, eq, lte, gte, isNull, or } from "drizzle-orm";
 import { addMonths, format, getDaysInMonth, lastDayOfMonth, parseISO, startOfMonth } from "date-fns";
 import { db } from "@/db";
 import { expenses, recurringExpenses } from "@/db/schema";
@@ -11,6 +11,52 @@ export async function listarRecorrencias() {
     orderBy: (r, { desc, asc }) => [desc(r.ativo), asc(r.descricao)],
     with: { pagador: true },
   });
+}
+
+/** Ocorrências futuras calculadas a partir do cadastro; nunca são gravadas. */
+export async function previsoesRecorrencias(de: string, ate: string) {
+  const competenciaAtual = competenciaAtualISO();
+  if (ate < competenciaAtual) return [];
+
+  const recorrencias = await db.query.recurringExpenses.findMany({
+    where: and(
+      eq(recurringExpenses.ativo, true),
+      lte(recurringExpenses.inicio, ate),
+      or(isNull(recurringExpenses.fim), gte(recurringExpenses.fim, de)),
+    ),
+    with: { pagador: true },
+  });
+  const existentes = await db.query.expenses.findMany({
+    where: and(gte(expenses.data, de), lte(expenses.data, ate)),
+    columns: { recorrenciaId: true, data: true },
+  });
+  const jaLancadas = new Set(existentes.map((e) => `${e.recorrenciaId}|${e.data}`));
+  const previsoes = [];
+
+  for (const r of recorrencias) {
+    let mes = startOfMonth(parseISO(de < competenciaAtual ? competenciaAtual : de));
+    while (format(mes, "yyyy-MM-dd") <= ate) {
+      const dia = Math.min(r.diaMes, getDaysInMonth(mes));
+      const data = format(new Date(mes.getFullYear(), mes.getMonth(), dia), "yyyy-MM-dd");
+      if (data >= de && data >= r.inicio && (!r.fim || data <= r.fim) && !jaLancadas.has(`${r.id}|${data}`)) {
+        const chaveMes = Number(format(mes, "yyyyMM"));
+        previsoes.push({
+          id: -(r.id * 100_000_000 + chaveMes),
+          descricao: r.descricao,
+          valorCents: r.valorCents,
+          data,
+          categoria: r.categoria,
+          pagoPor: r.pagoPor,
+          compartilhada: r.compartilhada,
+          recorrenciaId: r.id,
+          pagador: r.pagador,
+          virtual: true as const,
+        });
+      }
+      mes = addMonths(mes, 1);
+    }
+  }
+  return previsoes;
 }
 
 /** Soma mensal (centavos) das recorrências vigentes em cada competência — usada na projeção. */

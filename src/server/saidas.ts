@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { expenses } from "@/db/schema";
 import { SEM_CATEGORIA } from "@/lib/categorias";
 import type { Periodo } from "@/lib/periodo";
+import { previsoesRecorrencias } from "./recorrencias";
 
 export interface FiltroSaidas {
   q?: string;
@@ -38,19 +39,35 @@ export async function listarSaidas(periodo: Periodo, filtro: FiltroSaidas = {}) 
           ? [asc(expenses.valorCents)]
           : [desc(expenses.data), desc(expenses.id)];
 
-  return db.query.expenses.findMany({
+  const efetivas = await db.query.expenses.findMany({
     where: and(...condicoes),
     orderBy: ordem,
     with: { pagador: true },
   });
+  const previsoes = await previsoesRecorrencias(periodo.de, periodo.ate);
+  const busca = filtro.q?.trim().toLocaleLowerCase("pt-BR");
+  return [...efetivas, ...previsoes]
+    .filter((s) => !busca || s.descricao.toLocaleLowerCase("pt-BR").includes(busca))
+    .filter((s) => !filtro.categoria || (s.categoria ?? "") === (filtro.categoria === SEM_CATEGORIA ? "" : filtro.categoria))
+    .filter((s) => !filtro.pagoPor || s.pagoPor === filtro.pagoPor)
+    .filter((s) => filtro.min == null || s.valorCents >= filtro.min)
+    .filter((s) => filtro.max == null || s.valorCents <= filtro.max)
+    .sort((a, b) => {
+      if (filtro.ordem === "data_asc") return a.data.localeCompare(b.data) || a.id - b.id;
+      if (filtro.ordem === "valor_desc") return b.valorCents - a.valorCents;
+      if (filtro.ordem === "valor_asc") return a.valorCents - b.valorCents;
+      return b.data.localeCompare(a.data) || b.id - a.id;
+    });
 }
 
 /** Todas as saídas do período, sem filtros — base das análises. */
 export async function saidasNoPeriodo(periodo: Periodo) {
-  return db.query.expenses.findMany({
+  const efetivas = await db.query.expenses.findMany({
     where: and(gte(expenses.data, periodo.de), lte(expenses.data, periodo.ate)),
     with: { pagador: true },
   });
+  const previsoes = await previsoesRecorrencias(periodo.de, periodo.ate);
+  return [...efetivas, ...previsoes];
 }
 
 export async function categoriasDeSaidas() {

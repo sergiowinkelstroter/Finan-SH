@@ -163,13 +163,13 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
                           </Badge>
                         )}
                         {s.pagador && <span>· {s.pagador.nome}</span>}
-                        {s.recorrenciaId && <Badge variant="info">recorrente</Badge>}
+                        {s.virtual ? <Badge variant="info">previsão recorrente</Badge> : s.recorrenciaId && <Badge variant="info">recorrente</Badge>}
                         {!s.compartilhada && <Badge variant="outline">individual</Badge>}
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
                       <span className="font-mono tabular text-tinta">{formatCents(s.valorCents)}</span>
-                      <SaidaFormDialog
+                      {!s.virtual && <SaidaFormDialog
                         usuarios={usuarios}
                         categorias={usadas}
                         saida={s}
@@ -178,8 +178,8 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
                             Editar
                           </Button>
                         }
-                      />
-                      <SaidaDeleteButton id={s.id} descricao={s.descricao} />
+                      />}
+                      {!s.virtual && <SaidaDeleteButton id={s.id} descricao={s.descricao} />}
                     </div>
                   </CardContent>
                 </Card>

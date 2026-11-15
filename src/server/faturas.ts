@@ -112,7 +112,10 @@ export async function getAlertasVencimento(): Promise<AlertaVencimento[]> {
   const alertas: AlertaVencimento[] = [];
   for (const lista of mapa.values()) {
     for (const f of lista) {
-      if (f.invoice?.status === "paga" || f.valorCents <= 0) continue;
+      // O aviso serve para lembrar apenas de faturas ainda abertas.
+      // Faturas fechadas já têm valor definitivo e não precisam de alerta.
+      if (f.invoice && f.invoice.status !== "aberta") continue;
+      if (f.valorCents <= 0) continue;
       const dias = differenceInCalendarDays(parseISO(f.vencimento), hoje);
       if (dias >= -10 && dias <= 7) alertas.push({ fatura: f, dias });
     }
