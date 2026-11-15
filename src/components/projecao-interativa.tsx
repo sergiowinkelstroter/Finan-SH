@@ -47,8 +47,7 @@ export function ProjecaoInterativa({
   );
 
   const linhas = useMemo(() => {
-    let acumulado = 0;
-    return linhasBase.map((linha, indice) => {
+    const ajustadas = linhasBase.map((linha, indice) => {
       const variaveisCents = estimativas.reduce((total, estimativa) => {
         const estado = valores[estimativa.chave];
         if (!estado?.incluir) return total + (indice === 0 ? estimativa.atualCents : 0);
@@ -58,9 +57,14 @@ export function ProjecaoInterativa({
           : mensal);
       }, 0);
       const saldoProjetadoCents = linha.saldoProjetadoCents + linha.saidasVariaveisCents - variaveisCents;
-      acumulado += saldoProjetadoCents;
-      return { ...linha, saidasVariaveisCents: variaveisCents, saldoProjetadoCents, saldoAcumuladoCents: acumulado };
+      return { ...linha, saidasVariaveisCents: variaveisCents, saldoProjetadoCents };
     });
+    return ajustadas.map((linha, indice) => ({
+      ...linha,
+      saldoAcumuladoCents: ajustadas
+        .slice(0, indice + 1)
+        .reduce((total, anterior) => total + anterior.saldoProjetadoCents, 0),
+    }));
   }, [estimativas, linhasBase, proporcaoRestanteMesAtual, valores]);
 
   const totalEntradasCents = linhas.reduce((s, l) => s + l.entradasCents, 0);
