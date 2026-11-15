@@ -161,7 +161,7 @@ export default async function DashboardPage({
                   <span className="text-xs text-muted-foreground">
                     {formatDataCurta(s.data)}
                     {s.categoria ? ` · ${s.categoria}` : ""}
-                    {s.virtual ? " · previsão recorrente" : ""}
+                    {s.id < 0 ? " · previsão recorrente" : ""}
                   </span>
                 </span>
                 <span className="font-mono tabular text-tinta">{formatCents(s.valorCents)}</span>
