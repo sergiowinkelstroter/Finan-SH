@@ -1,12 +1,12 @@
 import "server-only";
 
-import { and, gte, isNull, lt, lte } from "drizzle-orm";
+import { and, eq, gte, isNull, lt, lte } from "drizzle-orm";
 import { db } from "@/db";
-import { expenses } from "@/db/schema";
+import { expenses, purchases } from "@/db/schema";
 import { addMesesCompetencia, competenciaAtualISO, competenciaLabel, competenciaLabelCurta, hojeISO } from "@/lib/dates";
 import { SEM_CATEGORIA } from "@/lib/categorias";
-import { getDaysInMonth, parseISO } from "date-fns";
-import { getComprometidoPorMes } from "./compras";
+import { format, getDaysInMonth, lastDayOfMonth, parseISO } from "date-fns";
+import { getFaturasDeMeses } from "./faturas";
 import { entradasPorMes } from "./entradas";
 import { tetosPorMes } from "./orcamento";
 import { recorrenciasPorMes } from "./recorrencias";
@@ -44,25 +44,48 @@ export async function getProjecao(meses = 12): Promise<Projecao> {
   const comps = Array.from({ length: meses }, (_, i) => addMesesCompetencia(inicio, i));
   const inicioHistorico = addMesesCompetencia(inicio, -3);
   const hoje = hojeISO();
-  const [comprometidoMapa, entradas, tetos, recorrentes, historico, atuais, aportePlanejadoCents, aporteMesAtualCents] = await Promise.all([
-    getComprometidoPorMes(),
+  const fimMesAtual = format(lastDayOfMonth(parseISO(inicio)), "yyyy-MM-dd");
+  const [faturas, entradas, tetos, recorrentes, historico, atuais, aportePlanejadoCents, aporteMesAtualCents, cartaoAVista] = await Promise.all([
+    // Mesmo critério da planilha: valor efetivo da fatura (fechado/parcial/parcelas).
+    getFaturasDeMeses(comps),
     entradasPorMes(comps),
     tetosPorMes(comps),
     recorrenciasPorMes(comps),
     db.query.expenses.findMany({
       where: and(gte(expenses.data, inicioHistorico), lt(expenses.data, inicio), isNull(expenses.recorrenciaId)),
-      columns: { categoria: true, valorCents: true },
+      columns: { categoria: true, valorCents: true, data: true },
     }),
+    // Mês atual inteiro (inclui saídas lançadas com data futura, como o Início).
     db.query.expenses.findMany({
-      where: and(gte(expenses.data, inicio), lte(expenses.data, hoje), isNull(expenses.recorrenciaId)),
+      where: and(gte(expenses.data, inicio), lte(expenses.data, fimMesAtual), isNull(expenses.recorrenciaId)),
       columns: { categoria: true, valorCents: true },
     }),
     getAportePlanejado(),
     getAporteDoMes(inicio),
+    // Compras à vista no cartão dos últimos meses: também são gasto variável e
+    // não existem como parcela futura — sem isso o futuro fica otimista demais.
+    db
+      .select({ categoria: purchases.categoria, valorCents: purchases.valorTotalCents, competencia: purchases.primeiraCompetencia })
+      .from(purchases)
+      .where(
+        and(
+          eq(purchases.qtdParcelas, 1),
+          gte(purchases.primeiraCompetencia, inicioHistorico),
+          lt(purchases.primeiraCompetencia, inicio),
+        ),
+      ),
   ]);
+  const comprometidoMapa = new Map(
+    comps.map((c) => [c, (faturas.get(c) ?? []).reduce((s, f) => s + f.valorCents, 0)]),
+  );
 
   const porCategoria = new Map<string, { categoria: string | null; historicoCents: number; atualCents: number }>();
-  for (const e of historico) {
+  const mesesComDados = new Set<string>();
+  for (const e of historico) mesesComDados.add(e.data.slice(0, 7));
+  for (const c of cartaoAVista) mesesComDados.add(c.competencia.slice(0, 7));
+  // Divide pelos meses que têm lançamento (quem começou há 1 mês não fica com 1/3 do real).
+  const mesesHistorico = Math.min(3, Math.max(1, mesesComDados.size));
+  for (const e of [...historico, ...cartaoAVista.map((c) => ({ ...c, valorCents: Number(c.valorCents) }))]) {
     const chave = e.categoria ?? "__sem_categoria__";
     const item = porCategoria.get(chave) ?? { categoria: e.categoria, historicoCents: 0, atualCents: 0 };
     item.historicoCents += e.valorCents;
@@ -78,7 +101,7 @@ export async function getProjecao(meses = 12): Promise<Projecao> {
     chave,
     categoria: item.categoria,
     label: item.categoria ?? SEM_CATEGORIA,
-    mediaMensalCents: Math.round(item.historicoCents / 3),
+    mediaMensalCents: Math.round(item.historicoCents / mesesHistorico),
     atualCents: item.atualCents,
   })).sort((a, b) => b.mediaMensalCents - a.mediaMensalCents || a.label.localeCompare(b.label, "pt-BR"));
   const dia = Number(hoje.slice(8, 10));

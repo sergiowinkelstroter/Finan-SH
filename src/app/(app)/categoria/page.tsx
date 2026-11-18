@@ -19,7 +19,7 @@ import { categoriasDeSaidas } from "@/server/saidas";
 export default async function CategoriaPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
   const nome = um(sp.nome)?.trim() || SEM_CATEGORIA;
-  const periodo = parsePeriodo({ mes: um(sp.mes), de: um(sp.de), ate: um(sp.ate) });
+  const periodo = parsePeriodo({ mes: um(sp.mes) });
   await garantirRecorrencias();
   const [{ itens, faltaNoCartao }, catSaidas, catCompras] = await Promise.all([
     getLancamentosCategoria(periodo, nome),
@@ -107,8 +107,8 @@ export default async function CategoriaPage({ searchParams }: { searchParams: Pr
                 key={i.chave}
                 leading={<CategoriaIcone nome={RESERVA} />}
                 titulo={i.descricao}
-                subtitulo={i.data.split("-").reverse().join("/")}
-                trailing={<span className="font-mono text-sm font-semibold tabular text-menta">{formatCents(i.valorCents)}</span>}
+                subtitulo={`${i.data.split("-").reverse().join("/")} · ${i.detalhe}`}
+                trailing={<span className={`font-mono text-sm font-semibold tabular ${i.valorCents < 0 ? "text-rosa" : "text-menta"}`}>{formatCents(i.valorCents)}</span>}
               />
             ))}
           </ListCard>

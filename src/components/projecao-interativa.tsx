@@ -92,7 +92,7 @@ export function ProjecaoInterativa({
           <div>
             <CardTitle>Estimativa de gastos variáveis</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
-              Média por categoria dos três últimos meses completos. Ajuste o valor mensal ou desmarque para ignorar.
+              Média por categoria dos últimos meses completos (até 3), somando saídas avulsas e compras à vista no cartão. Ajuste o valor mensal ou desmarque para ignorar.
               No mês atual, os lançamentos já registrados continuam incluídos.
             </p>
           </div>
@@ -176,7 +176,7 @@ export function ProjecaoInterativa({
             <BarChart
               series={[
                 { nome: "Entradas", cor: "#0ea88c" },
-                { nome: "Parcelas", cor: "#6c4cf0" },
+                { nome: "Faturas", cor: "#6c4cf0" },
                 { nome: "Recorrentes", cor: "#2e6be6" },
                 { nome: "Saídas variáveis", cor: "#e2496b" },
                 { nome: "Reserva", cor: "#10b981" },
@@ -195,7 +195,7 @@ export function ProjecaoInterativa({
                 { nome: "Saldo do mês", cor: "#2e6be6", tracejada: true, valores: linhas.map((l) => l.saldoProjetadoCents) },
               ]}
             />
-            <p className="mt-2 text-xs text-muted-foreground">Saldo = entradas − parcelas − recorrências − saídas variáveis estimadas − reserva.</p>
+            <p className="mt-2 text-xs text-muted-foreground">Saldo = entradas − faturas − recorrências − saídas variáveis estimadas − reserva.</p>
           </CardContent>
         </Card>
       </div>
@@ -241,7 +241,7 @@ export function ProjecaoInterativa({
                 </div>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
                   <Item cor="#0ea88c" rotulo="Entradas" valor={formatCents(l.entradasCents)} />
-                  <Item cor="#6c4cf0" rotulo="Parcelas" valor={`~${formatCents(l.comprometidoCents)}`} />
+                  <Item cor="#6c4cf0" rotulo="Faturas" valor={`~${formatCents(l.comprometidoCents)}`} />
                   <Item cor="#2e6be6" rotulo="Recorrentes" valor={formatCents(l.recorrentesCents)} />
                   <Item cor="#e2496b" rotulo="Variáveis" valor={`~${formatCents(l.saidasVariaveisCents)}`} />
                   <Item cor="#10b981" rotulo="Reserva" valor={formatCents(l.reservaCents)} />

@@ -6,11 +6,27 @@ import { db } from "@/db";
 import { recurringExpenses } from "@/db/schema";
 import { normalizarCategoria } from "@/lib/categorias";
 import { recorrenciaSchema, type RecorrenciaInput } from "@/lib/validation";
+import { addMesesCompetencia, competenciaAtualISO } from "@/lib/dates";
+
+/**
+ * Ao reativar, os meses em que ficou pausada não devem ser gerados de uma vez:
+ * avança `ultimaGeracao` até o mês anterior ao atual (o atual ainda é lançado).
+ */
+async function pularMesesPausados(id: number) {
+  const r = await db.query.recurringExpenses.findFirst({ where: eq(recurringExpenses.id, id) });
+  if (!r || r.ativo) return;
+  const anterior = addMesesCompetencia(competenciaAtualISO(), -1);
+  if (!r.ultimaGeracao || r.ultimaGeracao < anterior) {
+    await db.update(recurringExpenses).set({ ultimaGeracao: anterior }).where(eq(recurringExpenses.id, id));
+  }
+}
 
 function revalidar() {
   revalidatePath("/recorrencias");
   revalidatePath("/saidas");
   revalidatePath("/projecao");
+  revalidatePath("/planilha");
+  revalidatePath("/fluxo");
   revalidatePath("/analises");
   revalidatePath("/");
 }
@@ -30,6 +46,7 @@ export async function salvarRecorrencia(input: RecorrenciaInput) {
     ativo: data.ativo ?? true,
   };
   if (data.id) {
+    if (values.ativo) await pularMesesPausados(data.id);
     await db.update(recurringExpenses).set(values).where(eq(recurringExpenses.id, data.id));
   } else {
     await db.insert(recurringExpenses).values(values);
@@ -38,6 +55,7 @@ export async function salvarRecorrencia(input: RecorrenciaInput) {
 }
 
 export async function alternarRecorrencia(id: number, ativo: boolean) {
+  if (ativo) await pularMesesPausados(id);
   await db.update(recurringExpenses).set({ ativo }).where(eq(recurringExpenses.id, id));
   revalidar();
 }

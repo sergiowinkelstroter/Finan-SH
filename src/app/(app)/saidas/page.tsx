@@ -47,7 +47,8 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
     listarAportesDoPeriodo(periodo),
   ]);
 
-  // Reserva é saída do mês: aportes entram na lista (resgates não).
+  // Reserva é saída do mês: aportes entram na lista e resgates devolvem (valor negativo),
+  // igual ao "Guardou" do Início.
   const filtroCat = um(sp.categoria);
   const q = um(sp.q)?.trim().toLocaleLowerCase("pt-BR");
   const minC = min ? parseReaisParaCents(min) : null;
@@ -55,9 +56,8 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
   const incluirReserva = (!filtroCat || filtroCat === RESERVA) && !sp.pagoPor;
   const aportes = incluirReserva
     ? aportesPeriodo
-        .filter((a) => a.valorCents > 0)
         .filter((a) => !q || (a.descricao ?? "reserva").toLocaleLowerCase("pt-BR").includes(q))
-        .filter((a) => (minC == null || a.valorCents >= minC) && (maxC == null || a.valorCents <= maxC))
+        .filter((a) => (minC == null || Math.abs(a.valorCents) >= minC) && (maxC == null || Math.abs(a.valorCents) <= maxC))
     : [];
   type Item =
     | ({ tipo: "saida" } & (typeof saidasBase)[number])
@@ -67,7 +67,7 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
     ...aportes.map((a) => ({
       tipo: "reserva" as const,
       id: a.id,
-      descricao: a.descricao || "Guardado na reserva",
+      descricao: a.descricao || (a.valorCents >= 0 ? "Guardado na reserva" : "Resgate da reserva"),
       valorCents: a.valorCents,
       data: a.data,
       categoria: RESERVA,
@@ -95,6 +95,7 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
   }
   const ranking = [...porCategoria.entries()]
     .map(([nome, cents]) => ({ nome, cents, cor: nome === RESERVA ? COR_RESERVA : corCategoria(nome) }))
+    .filter((c) => c.cents > 0)
     .sort((a, b) => b.cents - a.cents);
 
   // Agrupa por dia (a lista já vem ordenada; agrupar só quando ordenada por data)
@@ -176,8 +177,8 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
       <Card>
         <CardContent className="flex flex-col divide-y divide-border/60 p-0">
           <Stat rotulo="Gastos" valor={formatCents(total - totalReserva)} />
-          <Stat rotulo="Reserva" valor={formatCents(totalReserva)} />
-          <Stat rotulo="Média/dia" valor={formatCents(Math.round(total / diasDoPeriodo(periodo)))} />
+          <Stat rotulo="Reserva (líquido)" valor={formatCents(totalReserva)} />
+          <Stat rotulo="Gasto médio/dia" valor={formatCents(Math.round((total - totalReserva) / diasDoPeriodo(periodo)))} />
         </CardContent>
       </Card>
 
@@ -211,7 +212,7 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
           {grupos.map((g) => (
             <section key={g.data || "todos"} className="flex flex-col gap-1.5">
               {g.data && (
-                <SectionLabel extra={`−${formatCents(g.total)}`}>
+                <SectionLabel extra={`${g.total < 0 ? "+" : "−"}${formatCents(Math.abs(g.total))}`}>
                   <span className="normal-case">{rotuloDia(g.data)}</span>
                 </SectionLabel>
               )}
@@ -227,7 +228,7 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
                       <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                         {!g.data && <span>{formatDataCurta(s.data)} ·</span>}
                         {s.tipo === "reserva" ? (
-                          <Badge variant="success">reserva</Badge>
+                          <Badge variant={s.valorCents >= 0 ? "success" : "outline"}>{s.valorCents >= 0 ? "reserva" : "resgate"}</Badge>
                         ) : (
                           <>
                             <span>{s.categoria ?? "Sem categoria"}</span>
@@ -240,7 +241,8 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
                     </div>
                     <div className="flex shrink-0 items-center gap-0.5">
                       <span className={`font-mono text-sm font-semibold tabular ${s.tipo === "reserva" ? "text-menta" : "text-tinta"}`}>
-                        −{formatCents(s.valorCents)}
+                        {s.valorCents < 0 ? "+" : "−"}
+                        {formatCents(Math.abs(s.valorCents))}
                       </span>
                       {s.tipo === "reserva" ? (
                         <AporteDeleteButton id={s.id} descricao={s.descricao} />

@@ -18,7 +18,7 @@ import { um, type SearchParams } from "@/lib/search";
 import { getAportePlanejado, getEvolucaoReserva, getProgressoMeta, getReservaAtual, getSaldoInicial, listarMovimentosDoPeriodo } from "@/server/reserva";
 import { MarcarSaldoInicialButton, SaldoInicialReserva } from "@/components/saldo-inicial-reserva";
 import { Badge } from "@/components/ui/badge";
-import { hojeISO } from "@/lib/dates";
+import { agoraSaoPaulo, hojeISO } from "@/lib/dates";
 import { addMonths } from "date-fns";
 
 export default async function ReservaPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -28,8 +28,8 @@ export default async function ReservaPage({ searchParams }: { searchParams: Prom
   const periodo = temPeriodo
     ? parsePeriodo({ mes: um(sp.mes), de: um(sp.de), ate: um(sp.ate) })
     : parsePeriodo({
-        de: periodoDoMes(addMonths(new Date(), -11)).de,
-        ate: periodoDoMes(new Date()).ate,
+        de: periodoDoMes(addMonths(agoraSaoPaulo(), -11)).de,
+        ate: periodoDoMes(agoraSaoPaulo()).ate,
       });
 
   const [reservaAtualCents, aportes, evolucao, aportePlanejadoCents, saldoInicial] = await Promise.all([

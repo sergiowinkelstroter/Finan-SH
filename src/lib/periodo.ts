@@ -106,6 +106,22 @@ export function parsePeriodo(params: PeriodoParams): Periodo {
   return periodoDoMes(agoraSaoPaulo());
 }
 
+/**
+ * Quanto de uma competência (mês inteiro) cai dentro do período: 1 no modo mês;
+ * num intervalo que começa/termina no meio do mês, a fração de dias.
+ * Valores mensais (entradas, faturas, teto) são rateados por isso para não
+ * misturar mês inteiro com saídas contadas por data exata.
+ */
+export function fracaoDoMes(p: Periodo, competencia: string): number {
+  if (p.modo === "mes") return 1;
+  const ini = parseISO(competencia);
+  const fim = endOfMonth(ini);
+  const a = parseISO(p.de) > ini ? parseISO(p.de) : ini;
+  const b = parseISO(p.ate) < fim ? parseISO(p.ate) : fim;
+  const dias = differenceInCalendarDays(b, a) + 1;
+  return dias <= 0 ? 0 : Math.min(1, dias / (differenceInCalendarDays(fim, ini) + 1));
+}
+
 /** Período imediatamente anterior, com a mesma duração (base de comparações). */
 export function periodoAnterior(p: Periodo): Periodo {
   if (p.modo === "mes") return periodoDoMes(addMonths(parseISO(p.de), -1));

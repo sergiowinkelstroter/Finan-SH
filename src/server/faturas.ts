@@ -37,16 +37,19 @@ export function montarFaturas(
   for (const competencia of competencias) {
     resultado.set(
       competencia,
-      cartoes.map((card) => {
+      cartoes.flatMap((card) => {
         const chave = `${card.id}|${competencia}`;
         const invoice = invPorChave.get(chave) ?? null;
         const somaParcelasCents = somaPorChave.get(chave) ?? 0;
+        // Cartão arquivado só aparece no mês em que ainda tem fatura ou parcela —
+        // assim o dinheiro dele conta igual em todas as telas.
+        if (!card.ativo && !invoice && somaParcelasCents === 0) return [];
         const efetivo = valorEfetivoCartao({
           valorFechadoCents: invoice?.valorFechadoCents ?? null,
           valorParcialCents: invoice?.valorParcialCents ?? 0,
           somaParcelasCents,
         });
-        return {
+        return [{
           card,
           invoice,
           competencia,
@@ -58,21 +61,19 @@ export function montarFaturas(
           somaParcelasCents,
           valorCents: efetivo.valorCents,
           tipo: efetivo.tipo,
-        };
+        }];
       }),
     );
   }
   return resultado;
 }
 
-export async function getFaturasDeMeses(
-  competencias: string[],
-  opts: { soAtivos?: boolean } = { soAtivos: true },
-) {
+/** Faturas efetivas por mês (cartões ativos + arquivados que ainda têm movimento no mês). */
+export async function getFaturasDeMeses(competencias: string[]) {
   if (competencias.length === 0) return new Map<string, FaturaEfetiva[]>();
   const [cartoes, invoicesRows, parcelas] = await Promise.all([
     db.query.cards.findMany({
-      where: opts.soAtivos ? eq(cards.ativo, true) : undefined,
+      // Arquivados entram, mas montarFaturas só os mantém nos meses com movimento.
       orderBy: (c, { asc }) => [asc(c.nome)],
     }),
     db.select().from(invoices).where(inArray(invoices.competencia, competencias)),
@@ -81,11 +82,8 @@ export async function getFaturasDeMeses(
   return montarFaturas(cartoes, invoicesRows, parcelas, competencias);
 }
 
-export async function getFaturasDoMes(
-  competencia: string,
-  opts: { soAtivos?: boolean } = { soAtivos: true },
-): Promise<FaturaEfetiva[]> {
-  const mapa = await getFaturasDeMeses([competencia], opts);
+export async function getFaturasDoMes(competencia: string): Promise<FaturaEfetiva[]> {
+  const mapa = await getFaturasDeMeses([competencia]);
   return mapa.get(competencia) ?? [];
 }
 
@@ -106,7 +104,7 @@ export interface AlertaVencimento {
 export async function getAlertasVencimento(): Promise<AlertaVencimento[]> {
   const atual = competenciaAtualISO();
   const comps = [-1, 0, 1].map((o) => addMesesCompetencia(atual, o));
-  const mapa = await getFaturasDeMeses(comps, { soAtivos: true });
+  const mapa = await getFaturasDeMeses(comps);
   const hoje = parseISO(hojeISO());
 
   const alertas: AlertaVencimento[] = [];

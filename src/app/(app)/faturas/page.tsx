@@ -27,7 +27,7 @@ export default async function FaturasPage({ searchParams }: { searchParams: Prom
   const competencia = periodo.competencia;
   // Janela do gráfico: 5 meses para trás e 3 para frente do mês selecionado.
   const janela = Array.from({ length: 9 }, (_, i) => addMesesCompetencia(competencia, i - 5));
-  const porMes = await getFaturasDeMeses(janela, { soAtivos: true });
+  const porMes = await getFaturasDeMeses(janela);
   const todas = porMes.get(competencia) ?? [];
   const status = escolha(sp.status, STATUS);
   const faturas = status ? todas.filter((f) => (f.invoice?.status ?? "aberta") === status) : todas;

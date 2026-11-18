@@ -16,7 +16,7 @@ import { garantirRecorrencias } from "@/server/recorrencias";
 
 export default async function FluxoPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const sp = await searchParams;
-  const periodo = parsePeriodo({ mes: um(sp.mes), de: um(sp.de), ate: um(sp.ate) });
+  const periodo = parsePeriodo({ mes: um(sp.mes) });
   await garantirRecorrencias();
   const { atual, categoriasAnterior } = await getAnaliseComparada(periodo);
   const mesQuery = periodo.de.slice(0, 7);
@@ -31,7 +31,7 @@ export default async function FluxoPage({ searchParams }: { searchParams: Promis
       />
 
       <div className="lg:max-w-md">
-        <SeletorPeriodo periodo={periodo} />
+        <SeletorPeriodo periodo={periodo} permitirIntervalo={false} />
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

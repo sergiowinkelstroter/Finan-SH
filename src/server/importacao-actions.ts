@@ -82,7 +82,10 @@ export async function analisarImportacao(input: AnalisarInput): Promise<LinhaAna
 
   const ocorrencias = new Map<string, number>();
   const comOrigem = linhas.map((l) => {
-    const chave = l.fitid ?? `${l.data}|${normalizarDescricao(l.descricao)}|${l.valorCents}`;
+    // "3/10" e "4/10" da mesma compra podem vir com a mesma data e valor: a parcela diferencia.
+    const chave =
+      l.fitid ??
+      `${l.data}|${normalizarDescricao(l.descricao)}|${l.valorCents}${l.parcela ? `|p${l.parcela.n}/${l.parcela.total}` : ""}`;
     const n = (ocorrencias.get(chave) ?? 0) + 1;
     ocorrencias.set(chave, n);
     return { ...l, origemId: origemIdDe(alvo, chave, n) };

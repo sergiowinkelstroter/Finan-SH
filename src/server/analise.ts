@@ -10,10 +10,8 @@ import {
 } from "@/lib/calculos";
 import { CARTAO_SEM_CATEGORIA, SEM_CATEGORIA, corCategoria } from "@/lib/categorias";
 import { competenciaLabelCurta } from "@/lib/dates";
-import { periodoAnterior, type Periodo } from "@/lib/periodo";
+import { fracaoDoMes, periodoAnterior, type Periodo } from "@/lib/periodo";
 import { db } from "@/db";
-import { cards } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import { entradasPorMes } from "./entradas";
 import { montarFaturas, type FaturaEfetiva } from "./faturas";
 import { parcelasNasCompetencias } from "./compras";
@@ -78,10 +76,8 @@ export async function getAnalise(periodo: Periodo): Promise<Analise> {
   const comps = periodo.competencias;
   const [cartoes, invoicesRows, parcelas, saidas, entradasMapa, tetosMapa, usuarios, aportes] =
     await Promise.all([
-      db.query.cards.findMany({
-        where: eq(cards.ativo, true),
-        orderBy: (c, { asc }) => [asc(c.nome)],
-      }),
+      // Todos os cartões: arquivados contam nos meses em que ainda têm parcela/fatura.
+      db.query.cards.findMany({ orderBy: (c, { asc }) => [asc(c.nome)] }),
       db.select().from(invoices).where(inArray(invoices.competencia, comps)),
       parcelasNasCompetencias(comps),
       saidasNoPeriodo(periodo),
@@ -112,12 +108,12 @@ export async function getAnalise(periodo: Periodo): Promise<Analise> {
       {
         competencia: c,
         label: competenciaLabelCurta(c),
-        entradasCents: entradasMapa.get(c) ?? 0,
+        entradasCents: Math.round((entradasMapa.get(c) ?? 0) * fracaoDoMes(periodo, c)),
         gastoCents: 0,
         gastoCartoesCents: 0,
         gastoSaidasCents: 0,
         reservaCents: 0,
-        tetoCents: tetosMapa.get(c) ?? 0,
+        tetoCents: Math.round((tetosMapa.get(c) ?? 0) * fracaoDoMes(periodo, c)),
       },
     ]),
   );
@@ -125,9 +121,12 @@ export async function getAnalise(periodo: Periodo): Promise<Analise> {
   let creditosCartaoCents = 0;
 
   for (const [competencia, lista] of faturasPorMes) {
+    // Intervalo parcial: a fatura do mês entra pela fração de dias do período.
+    const fr = fracaoDoMes(periodo, competencia);
+    const r = (v: number) => Math.round(v * fr);
     for (const f of lista) {
       tipos.push(f.tipo);
-      porMesMap.get(competencia)!.gastoCartoesCents += f.valorCents;
+      porMesMap.get(competencia)!.gastoCartoesCents += r(f.valorCents);
       const doCartao = parcelas.filter(
         (p) => p.cardId === f.card.id && p.competencia === competencia,
       );
@@ -137,15 +136,18 @@ export async function getAnalise(periodo: Periodo): Promise<Analise> {
       // a menos (estorno, crédito, desconto) → créditos do cartão.
       const fator = soma > 0 ? Math.min(1, f.valorCents / soma) : 0;
       for (const p of doCartao) {
-        somar(p.categoria ?? SEM_CATEGORIA, p.valorCents);
+        somar(p.categoria ?? SEM_CATEGORIA, r(p.valorCents));
         if (p.compartilhada) {
           const pagador = f.card.titularId ?? p.compradorId;
           // No acerto vale o que foi efetivamente pago na fatura.
-          if (pagador) pagamentos.push({ userId: pagador, cents: Math.round(p.valorCents * fator) });
+          if (pagador) pagamentos.push({ userId: pagador, cents: r(p.valorCents * fator) });
         }
       }
-      if (f.valorCents > soma) somar(CARTAO_SEM_CATEGORIA, f.valorCents - soma);
-      else creditosCartaoCents += soma - f.valorCents;
+      if (f.valorCents > soma) {
+        somar(CARTAO_SEM_CATEGORIA, r(f.valorCents - soma));
+        // Parte da fatura sem compra lançada: quem paga é o titular do cartão.
+        if (f.card.titularId) pagamentos.push({ userId: f.card.titularId, cents: r(f.valorCents - soma) });
+      } else creditosCartaoCents += r(soma - f.valorCents);
     }
   }
 

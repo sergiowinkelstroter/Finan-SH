@@ -29,7 +29,7 @@ export default async function ImportarPage() {
       />
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start">
         <ImportadorExtrato
-          cartoes={cartoes.map((c) => ({ id: c.id, nome: c.nome }))}
+          cartoes={cartoes.map((c) => ({ id: c.id, nome: c.nome, diaFechamento: c.diaFechamento, diaVencimento: c.diaVencimento }))}
           usuarios={usuarios.map((u) => ({ id: u.id, nome: u.nome }))}
           categorias={categorias}
           competenciaAtual={competenciaAtualISO()}

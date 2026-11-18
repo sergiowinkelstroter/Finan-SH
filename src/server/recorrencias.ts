@@ -36,6 +36,12 @@ export async function previsoesRecorrencias(de: string, ate: string) {
   for (const r of recorrencias) {
     let mes = startOfMonth(parseISO(de < competenciaAtual ? competenciaAtual : de));
     while (format(mes, "yyyy-MM-dd") <= ate) {
+      // Mês já materializado em `expenses`: o lançamento real (ou a exclusão dele)
+      // vale — não cria previsão por cima, mesmo se o dia da recorrência mudou.
+      if (r.ultimaGeracao && format(mes, "yyyy-MM-dd") <= r.ultimaGeracao) {
+        mes = addMonths(mes, 1);
+        continue;
+      }
       const dia = Math.min(r.diaMes, getDaysInMonth(mes));
       const data = format(new Date(mes.getFullYear(), mes.getMonth(), dia), "yyyy-MM-dd");
       if (data >= de && data >= r.inicio && (!r.fim || data <= r.fim) && !jaLancadas.has(`${r.id}|${data}`)) {

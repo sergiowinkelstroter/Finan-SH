@@ -25,6 +25,7 @@ import { CategoriaIcone } from "@/components/categoria-icone";
 import { IconBubble } from "@/components/ds";
 import { decodificarArquivo, lerExtrato, sinalDosGastos, type LinhaExtrato } from "@/lib/importacao";
 import { formatCents } from "@/lib/money";
+import { vencimentoFatura } from "@/lib/calculos";
 import { cn } from "@/lib/utils";
 import {
   analisarImportacao,
@@ -67,7 +68,7 @@ export function ImportadorExtrato({
   categorias,
   competenciaAtual,
 }: {
-  cartoes: { id: number; nome: string }[];
+  cartoes: { id: number; nome: string; diaFechamento: number; diaVencimento: number }[];
   usuarios: { id: number; nome: string }[];
   categorias: string[];
   competenciaAtual: string;
@@ -260,6 +261,16 @@ export function ImportadorExtrato({
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="imp-mes">Fatura de</Label>
                   <input id="imp-mes" type="month" className={classeCampo} value={mes} onChange={(e) => { setMes(e.target.value); setRevisao(null); }} />
+                  {(() => {
+                    const c = cartoes.find((x) => String(x.id) === cardId);
+                    if (!c || !mes) return null;
+                    const v = vencimentoFatura({ competencia: `${mes}-01`, diaFechamento: c.diaFechamento, diaVencimento: c.diaVencimento });
+                    return (
+                      <span className="text-[11px] text-muted-foreground">
+                        Fecha dia {c.diaFechamento} · <strong className="text-foreground">vence {v.split("-").reverse().slice(0, 2).join("/")}</strong>. Confira se é a mesma fatura do arquivo.
+                      </span>
+                    );
+                  })()}
                 </div>
               </>
             )}

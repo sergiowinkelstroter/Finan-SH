@@ -3,6 +3,7 @@ import { parsePeriodo } from "@/lib/periodo";
 import { formatCentsSemSimbolo } from "@/lib/money";
 import { escolha, inteiro, um } from "@/lib/search";
 import { listarSaidas } from "@/server/saidas";
+import { listarAportesDoPeriodo } from "@/server/reserva";
 import { listarCompras } from "@/server/compras";
 import { parseReaisParaCents } from "@/lib/money";
 
@@ -30,6 +31,16 @@ export async function GET(req: NextRequest) {
     linhas.push(["Data", "Descrição", "Categoria", "Pago por", "Valor", "Dividido"]);
     for (const s of saidas) {
       linhas.push([s.data, s.descricao, s.categoria, s.pagador?.nome ?? "", formatCentsSemSimbolo(s.valorCents), s.compartilhada ? "sim" : "não"]);
+    }
+    // Reserva conta como saída na tela de Saídas; o CSV acompanha (resgate sai negativo).
+    const cat = um(sp.categoria);
+    if ((!cat || cat === "Reserva") && !sp.pagoPor) {
+      const q = um(sp.q)?.toLocaleLowerCase("pt-BR");
+      for (const a of await listarAportesDoPeriodo(periodo)) {
+        const desc = a.descricao || (a.valorCents >= 0 ? "Guardado na reserva" : "Resgate da reserva");
+        if (q && !desc.toLocaleLowerCase("pt-BR").includes(q)) continue;
+        linhas.push([a.data, desc, "Reserva", "", formatCentsSemSimbolo(a.valorCents), "sim"]);
+      }
     }
   } else {
     const compras = await listarCompras(periodo, {

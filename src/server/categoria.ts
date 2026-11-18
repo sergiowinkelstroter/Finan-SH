@@ -38,16 +38,16 @@ export async function getLancamentosCategoria(periodo: Periodo, nome: string) {
 
   if (nome === RESERVA) {
     const aportes = await listarAportesDoPeriodo(periodo);
+    // Líquido, como no "Guardou": resgates entram negativos.
     const itens: ItemCategoria[] = aportes
-      .filter((a) => a.valorCents > 0)
       .map((a) => ({
         chave: `r${a.id}`,
         tipo: "reserva",
         id: a.id,
-        descricao: a.descricao || "Guardado na reserva",
+        descricao: a.descricao || (a.valorCents >= 0 ? "Guardado na reserva" : "Resgate da reserva"),
         data: a.data,
         valorCents: a.valorCents,
-        detalhe: "reserva",
+        detalhe: a.valorCents >= 0 ? "aporte" : "resgate",
         editavel: false,
         sugestao: null,
       }));
