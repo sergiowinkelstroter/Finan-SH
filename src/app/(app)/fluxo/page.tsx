@@ -56,6 +56,7 @@ export default async function FluxoPage({ searchParams }: { searchParams: Promis
         </CardHeader>
         <CardContent>
           <SankeyFluxo
+            creditosCents={atual.creditosCartaoCents}
             entradasCents={atual.entradasCents}
             reservaCents={atual.reservaCents}
             categorias={atual.porCategoriaOrigem}
@@ -70,6 +71,7 @@ export default async function FluxoPage({ searchParams }: { searchParams: Promis
           </CardHeader>
           <CardContent>
             <ParaOndeVai
+              creditosCents={atual.creditosCartaoCents}
               entradasCents={atual.entradasCents}
               reservaCents={atual.reservaCents}
               categorias={atual.porCategoria}

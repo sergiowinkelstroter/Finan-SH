@@ -55,6 +55,11 @@ export interface Analise {
   reservaCents: number;
   /** Entradas − gastos − reserva: o que sobrou solto. */
   livreCents: number;
+  /**
+   * Quanto as faturas fechadas vieram abaixo das compras lançadas (estornos,
+   * créditos, descontos). As categorias somam o valor cheio; isto desconta.
+   */
+  creditosCartaoCents: number;
   /** Gasto por categoria separado por origem (cartão × saída avulsa). */
   porCategoriaOrigem: { nome: string; cor: string; cartaoCents: number; saidasCents: number }[];
   /** sobra / entradas (null sem entradas). */
@@ -117,6 +122,7 @@ export async function getAnalise(periodo: Periodo): Promise<Analise> {
     ]),
   );
   const tipos: TipoValor[] = [];
+  let creditosCartaoCents = 0;
 
   for (const [competencia, lista] of faturasPorMes) {
     for (const f of lista) {
@@ -126,18 +132,20 @@ export async function getAnalise(periodo: Periodo): Promise<Analise> {
         (p) => p.cardId === f.card.id && p.competencia === competencia,
       );
       const soma = doCartao.reduce((s, p) => s + p.valorCents, 0);
+      // Categorias sempre pelo valor real das compras (bate com a tela da categoria).
+      // A diferença para o valor da fatura fica explícita: a mais → "Cartão (outros)";
+      // a menos (estorno, crédito, desconto) → créditos do cartão.
       const fator = soma > 0 ? Math.min(1, f.valorCents / soma) : 0;
-      let alocado = 0;
       for (const p of doCartao) {
-        const parte = Math.round(p.valorCents * fator);
-        alocado += parte;
-        somar(p.categoria ?? SEM_CATEGORIA, parte);
+        somar(p.categoria ?? SEM_CATEGORIA, p.valorCents);
         if (p.compartilhada) {
           const pagador = f.card.titularId ?? p.compradorId;
-          if (pagador) pagamentos.push({ userId: pagador, cents: parte });
+          // No acerto vale o que foi efetivamente pago na fatura.
+          if (pagador) pagamentos.push({ userId: pagador, cents: Math.round(p.valorCents * fator) });
         }
       }
-      somar(CARTAO_SEM_CATEGORIA, f.valorCents - alocado);
+      if (f.valorCents > soma) somar(CARTAO_SEM_CATEGORIA, f.valorCents - soma);
+      else creditosCartaoCents += soma - f.valorCents;
     }
   }
 
@@ -185,6 +193,7 @@ export async function getAnalise(periodo: Periodo): Promise<Analise> {
     sobraCents,
     reservaCents,
     livreCents: sobraCents - reservaCents,
+    creditosCartaoCents,
     porCategoriaOrigem: [...origem.entries()]
       .map(([nome, o]) => ({ nome, cor: corCategoria(nome), ...o }))
       .sort((a, b) => b.cartaoCents + b.saidasCents - (a.cartaoCents + a.saidasCents)),

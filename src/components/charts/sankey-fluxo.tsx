@@ -28,12 +28,15 @@ export function SankeyFluxo({
   entradasCents,
   reservaCents,
   categorias,
+  creditosCents = 0,
   maxCategorias = 7,
   altura = 380,
 }: {
   entradasCents: number;
   reservaCents: number;
   categorias: FluxoCategoria[];
+  /** Estornos/créditos do cartão: financiam parte de "Cartões" além das entradas. */
+  creditosCents?: number;
   maxCategorias?: number;
   altura?: number;
 }) {
@@ -55,8 +58,9 @@ export function SankeyFluxo({
   const saidas = cats.reduce((s, c) => s + c.saidasCents, 0);
   const reserva = Math.max(0, reservaCents);
   const usado = cartao + saidas + reserva;
-  const livre = Math.max(0, entradasCents - usado);
-  const deficit = Math.max(0, usado - entradasCents);
+  const creditos = Math.min(Math.max(0, creditosCents), cartao);
+  const livre = Math.max(0, entradasCents + creditos - usado);
+  const deficit = Math.max(0, usado - entradasCents - creditos);
 
   if (usado + livre <= 0) {
     return <p className="text-sm text-muted-foreground">Sem movimentação no período.</p>;
@@ -78,6 +82,7 @@ export function SankeyFluxo({
   };
 
   const iEntradas = idx("Entradas", COR.entradas);
+  const iCreditos = creditos > 0 ? idx("Estornos do cartão", COR.entradas) : -1;
   const iDeficit = deficit > 0 ? idx("Déficit", COR.deficit) : -1;
   const meio: [string, string, number][] = [
     ["Cartões", COR.cartoes, cartao],
@@ -85,27 +90,31 @@ export function SankeyFluxo({
     ["Reserva", COR.reserva, reserva],
     ["Livre", COR.livre, livre],
   ];
-  const totalMeio = meio.reduce((s, m) => s + m[2], 0);
+  // Créditos cobrem só cartão; o resto de cada nó do meio vem das entradas (e do déficit).
+  const aFinanciar = meio.map(([nome, , v]) => (nome === "Cartões" ? v - creditos : v));
+  const totalMeio = aFinanciar.reduce((s, v) => s + v, 0);
   const meioIdx = new Map<string, number>();
-  for (const [nome, cor, v] of meio) {
-    if (v <= 0) continue;
+  meio.forEach(([nome, cor, v], k) => {
+    if (v <= 0) return;
     const i = idx(nome, cor);
     meioIdx.set(nome, i);
-    if (iDeficit >= 0) {
-      const parteDeficit = Math.round((v * deficit) / totalMeio);
-      link(iEntradas, i, v - parteDeficit);
+    if (nome === "Cartões" && iCreditos >= 0) link(iCreditos, i, creditos);
+    const resto = aFinanciar[k];
+    if (iDeficit >= 0 && totalMeio > 0) {
+      const parteDeficit = Math.round((resto * deficit) / totalMeio);
+      link(iEntradas, i, resto - parteDeficit);
       link(iDeficit, i, parteDeficit);
     } else {
-      link(iEntradas, i, v);
+      link(iEntradas, i, resto);
     }
-  }
+  });
   for (const c of cats) {
     const i = idx(c.nome, c.cor);
     if (meioIdx.has("Cartões")) link(meioIdx.get("Cartões")!, i, c.cartaoCents);
     if (meioIdx.has("Saídas avulsas")) link(meioIdx.get("Saídas avulsas")!, i, c.saidasCents);
   }
 
-  const total = Math.max(entradasCents, usado);
+  const total = Math.max(entradasCents + creditos, usado);
 
   return (
     <div className="-mx-2 overflow-x-auto px-2">

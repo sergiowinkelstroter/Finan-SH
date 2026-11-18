@@ -123,6 +123,7 @@ export default async function DashboardPage({
             </CardHeader>
             <CardContent>
               <ParaOndeVai
+                creditosCents={analise.creditosCartaoCents}
                 entradasCents={analise.entradasCents}
                 reservaCents={analise.reservaCents}
                 categorias={analise.porCategoria}

@@ -112,6 +112,11 @@ export default async function AnalisesPage({ searchParams }: { searchParams: Pro
               fatias={atual.porCategoria}
               centro={{ titulo: "Total", valor: formatCents(atual.gastoCents) }}
             />
+            {atual.creditosCartaoCents > 0 && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Categorias pelo valor cheio das compras; estornos e créditos do cartão (−{formatCents(atual.creditosCartaoCents)}) já descontados do total.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -122,6 +127,7 @@ export default async function AnalisesPage({ searchParams }: { searchParams: Pro
         </CardHeader>
         <CardContent>
           <SankeyFluxo
+            creditosCents={atual.creditosCartaoCents}
             entradasCents={atual.entradasCents}
             reservaCents={atual.reservaCents}
             categorias={atual.porCategoriaOrigem}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertCircle, ArrowRight, ChevronRight } from "lucide-react";
+import { AlertCircle, ArrowRight, ChevronRight, Undo2 } from "lucide-react";
 import { CategoriaIcone } from "@/components/categoria-icone";
 import { CARTAO_SEM_CATEGORIA, COR_LIVRE, COR_RESERVA, LIVRE, RESERVA, SEM_CATEGORIA } from "@/lib/categorias";
 import { formatCents, formatPercentual } from "@/lib/money";
@@ -22,8 +22,11 @@ export function ParaOndeVai({
   hrefAnalise,
   hrefSemCategoria,
   queryPeriodo,
+  creditosCents = 0,
   max = 6,
 }: {
+  /** Estornos/créditos do cartão: as categorias somam o valor cheio das compras. */
+  creditosCents?: number;
   /** Ex.: "mes=2026-11" — cada fatia vira link para a tela da categoria. */
   queryPeriodo?: string;
   entradasCents: number;
@@ -35,8 +38,9 @@ export function ParaOndeVai({
 }) {
   const gasto = categorias.reduce((s, c) => s + c.cents, 0);
   const reserva = Math.max(0, reservaCents);
-  const livre = entradasCents - gasto - reserva;
-  const base = Math.max(entradasCents, gasto + reserva, 1);
+  const creditos = Math.max(0, creditosCents);
+  const livre = entradasCents + creditos - gasto - reserva;
+  const base = Math.max(entradasCents + creditos, gasto + reserva, 1);
 
   const top = categorias.slice(0, max);
   const outras = categorias.slice(max).reduce((s, c) => s + c.cents, 0);
@@ -105,7 +109,11 @@ export function ParaOndeVai({
                   </span>
                 </div>
               </div>
-                    {href && <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />}
+                    {href ? (
+                      <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />
+                    ) : (
+                      <span className="size-4 shrink-0" aria-hidden />
+                    )}
                   </>
                 );
                 return href ? (
@@ -113,13 +121,29 @@ export function ParaOndeVai({
                     {conteudo}
                   </Link>
                 ) : (
-                  <div className="flex items-center gap-3 py-1.5">{conteudo}</div>
+                  <div className="-mx-2 flex items-center gap-3 px-2 py-1.5">{conteudo}</div>
                 );
               })()}
             </li>
           );
         })}
       </ul>
+
+      {creditos > 0 && (
+        <div className="flex items-center gap-3 rounded-xl bg-menta/5 px-2 py-2">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-menta/10 text-menta">
+            <Undo2 className="size-3.5" />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-sm font-medium text-foreground">Estornos e créditos do cartão</span>
+            <span className="text-[11px] leading-tight text-muted-foreground">
+              A fatura fechou menor que as compras lançadas. As categorias mostram o valor cheio das compras.
+            </span>
+          </span>
+          <span className="whitespace-nowrap font-mono text-sm font-semibold tabular text-menta">−{formatCents(creditos)}</span>
+          <span className="size-4 shrink-0" aria-hidden />
+        </div>
+      )}
 
       {pctSemCategoria >= 0.1 && (
         <div className="flex items-start gap-2 rounded-xl bg-[#f59e0b]/10 p-3 text-xs text-[#a16207]">
