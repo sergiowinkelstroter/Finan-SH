@@ -1,0 +1,1 @@
+ALTER TABLE "savings_entries" ADD COLUMN "inicial" boolean DEFAULT false NOT NULL;

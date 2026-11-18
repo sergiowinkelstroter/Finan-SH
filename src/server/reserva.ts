@@ -37,10 +37,24 @@ export async function simularReserva(input: SimularReservaInput) {
   return { saldoInicialCents, saldos };
 }
 
+/** Todas as movimentações do período, inclusive o saldo inicial (tela da reserva). */
+export async function listarMovimentosDoPeriodo(periodo: Periodo, conta = "principal") {
+  return db.query.savingsEntries.findMany({
+    where: and(
+      eq(savingsEntries.conta, conta),
+      gte(savingsEntries.data, periodo.de),
+      lte(savingsEntries.data, periodo.ate),
+    ),
+    orderBy: (s, { desc }) => [desc(s.data), desc(s.id)],
+  });
+}
+
+/** Aportes/resgates do período que contam como saída do mês (sem o saldo inicial). */
 export async function listarAportesDoPeriodo(periodo: Periodo, conta = "principal") {
   return db.query.savingsEntries.findMany({
     where: and(
       eq(savingsEntries.conta, conta),
+      eq(savingsEntries.inicial, false),
       gte(savingsEntries.data, periodo.de),
       lte(savingsEntries.data, periodo.ate),
     ),
@@ -62,7 +76,7 @@ export async function getEvolucaoReserva(periodo: Periodo, conta = "principal") 
       competencia: c,
       label: competenciaLabelCurta(c),
       saldoCents: ate.reduce((s, e) => s + e.valorCents, 0),
-      aportesCents: doMes.reduce((s, e) => s + e.valorCents, 0),
+      aportesCents: doMes.filter((e) => !e.inicial).reduce((s, e) => s + e.valorCents, 0),
     };
   });
 }
@@ -80,8 +94,22 @@ export async function getAporteDoMes(competencia: string, conta = "principal") {
   const [r] = await db
     .select({ total: sql<string>`coalesce(sum(${savingsEntries.valorCents}), 0)` })
     .from(savingsEntries)
-    .where(and(eq(savingsEntries.conta, conta), gte(savingsEntries.data, competencia), sql`${savingsEntries.data} < ${fim}`));
+    .where(
+      and(
+        eq(savingsEntries.conta, conta),
+        eq(savingsEntries.inicial, false),
+        gte(savingsEntries.data, competencia),
+        sql`${savingsEntries.data} < ${fim}`,
+      ),
+    );
   return Number(r.total);
+}
+
+export async function getSaldoInicial(conta = "principal") {
+  return db.query.savingsEntries.findFirst({
+    where: and(eq(savingsEntries.conta, conta), eq(savingsEntries.inicial, true)),
+    orderBy: (s, { asc }) => [asc(s.data)],
+  });
 }
 
 export async function getMetaReserva() {
@@ -98,7 +126,7 @@ async function aporteMedioMensal(conta = "principal") {
   const [r] = await db
     .select({ total: sql<string>`coalesce(sum(${savingsEntries.valorCents}), 0)` })
     .from(savingsEntries)
-    .where(and(eq(savingsEntries.conta, conta), gte(savingsEntries.data, inicio)));
+    .where(and(eq(savingsEntries.conta, conta), eq(savingsEntries.inicial, false), gte(savingsEntries.data, inicio)));
   return Math.round(Number(r.total) / 6);
 }
 

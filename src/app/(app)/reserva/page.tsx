@@ -2,7 +2,7 @@ import { AporteDeleteButton } from "@/components/aporte-delete-button";
 import { AporteFormDialog } from "@/components/aporte-form-dialog";
 import { AportePlanejadoForm } from "@/components/aporte-planejado-form";
 import { PageHeader } from "@/components/page-header";
-import { ArrowDownLeft, ArrowUpRight, PiggyBank, Plus, Target } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Landmark, PiggyBank, Plus, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, IconBubble, ListCard, ListItem, SectionLabel } from "@/components/ds";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +15,10 @@ import { competenciaLabel, formatDataCurta } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
 import { parsePeriodo, periodoDoMes } from "@/lib/periodo";
 import { um, type SearchParams } from "@/lib/search";
-import { getAportePlanejado, getEvolucaoReserva, getProgressoMeta, getReservaAtual, listarAportesDoPeriodo } from "@/server/reserva";
+import { getAportePlanejado, getEvolucaoReserva, getProgressoMeta, getReservaAtual, getSaldoInicial, listarMovimentosDoPeriodo } from "@/server/reserva";
+import { MarcarSaldoInicialButton, SaldoInicialReserva } from "@/components/saldo-inicial-reserva";
+import { Badge } from "@/components/ui/badge";
+import { hojeISO } from "@/lib/dates";
 import { addMonths } from "date-fns";
 
 export default async function ReservaPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -29,15 +32,16 @@ export default async function ReservaPage({ searchParams }: { searchParams: Prom
         ate: periodoDoMes(new Date()).ate,
       });
 
-  const [reservaAtualCents, aportes, evolucao, aportePlanejadoCents] = await Promise.all([
+  const [reservaAtualCents, aportes, evolucao, aportePlanejadoCents, saldoInicial] = await Promise.all([
     getReservaAtual(),
-    listarAportesDoPeriodo(periodo),
+    listarMovimentosDoPeriodo(periodo),
     getEvolucaoReserva(periodo),
     getAportePlanejado(),
+    getSaldoInicial(),
   ]);
   const meta = await getProgressoMeta(reservaAtualCents);
-  const entrou = aportes.filter((a) => a.valorCents > 0).reduce((s, a) => s + a.valorCents, 0);
-  const saiu = aportes.filter((a) => a.valorCents < 0).reduce((s, a) => s + a.valorCents, 0);
+  const entrou = aportes.filter((a) => a.valorCents > 0 && !a.inicial).reduce((s, a) => s + a.valorCents, 0);
+  const saiu = aportes.filter((a) => a.valorCents < 0 && !a.inicial).reduce((s, a) => s + a.valorCents, 0);
 
   const porMes: { competencia: string; itens: typeof aportes; total: number }[] = [];
   for (const a of aportes) {
@@ -92,6 +96,11 @@ export default async function ReservaPage({ searchParams }: { searchParams: Prom
           <CardMetaReserva progresso={meta} saldoCents={reservaAtualCents} />
         </div>
       </div>
+
+      <SaldoInicialReserva
+        atual={saldoInicial ? { valorCents: saldoInicial.valorCents, data: saldoInicial.data } : null}
+        hoje={hojeISO()}
+      />
 
       <Card>
         <CardContent className="flex flex-col gap-1.5 p-4">
@@ -163,24 +172,32 @@ export default async function ReservaPage({ searchParams }: { searchParams: Prom
                 <ListCard>
                   {g.itens.map((a) => {
                     const aporte = a.valorCents >= 0;
+                    const cor = a.inicial ? "#2e6be6" : aporte ? "#0ea88c" : "#e2496b";
                     return (
                       <ListItem
                         key={a.id}
                         leading={
-                          <IconBubble
-                            icon={aporte ? ArrowDownLeft : ArrowUpRight}
-                            cor={aporte ? "#0ea88c" : "#e2496b"}
-                          />
+                          <IconBubble icon={a.inicial ? Landmark : aporte ? ArrowDownLeft : ArrowUpRight} cor={cor} />
                         }
                         titulo={a.descricao || (aporte ? "Aporte" : "Resgate")}
-                        subtitulo={formatDataCurta(a.data)}
+                        subtitulo={
+                          <>
+                            {formatDataCurta(a.data)}
+                            {a.inicial && <Badge variant="info">saldo inicial · não é saída</Badge>}
+                          </>
+                        }
                         trailing={
-                          <span className={`font-mono text-sm font-semibold tabular ${aporte ? "text-menta" : "text-rosa"}`}>
+                          <span className="font-mono text-sm font-semibold tabular" style={{ color: cor }}>
                             {aporte ? "+" : ""}
                             {formatCents(a.valorCents)}
                           </span>
                         }
-                        acoes={<AporteDeleteButton id={a.id} descricao={a.descricao || "lançamento"} />}
+                        acoes={
+                          <>
+                            {aporte && <MarcarSaldoInicialButton id={a.id} inicial={a.inicial} />}
+                            <AporteDeleteButton id={a.id} descricao={a.descricao || "lançamento"} />
+                          </>
+                        }
                       />
                     );
                   })}

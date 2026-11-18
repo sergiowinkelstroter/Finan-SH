@@ -199,6 +199,8 @@ export const savingsEntries = pgTable("savings_entries", {
   data: date("data").notNull(),
   valorCents: bigint("valor_cents", { mode: "number" }).notNull(),
   descricao: text("descricao"),
+  /** Saldo que já existia antes de usar o app: compõe o saldo, mas não é saída do mês. */
+  inicial: boolean("inicial").notNull().default(false),
 });
 
 /** Regras de categorização automática: descrição contém `padrao` → `categoria`. */
