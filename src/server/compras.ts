@@ -1,8 +1,8 @@
 import "server-only";
 
-import { gte, inArray, sql } from "drizzle-orm";
+import { eq, gte, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { installments, purchases } from "@/db/schema";
+import { installments, invoices, purchases } from "@/db/schema";
 import { competenciaAtualISO } from "@/lib/dates";
 import type { Periodo } from "@/lib/periodo";
 
@@ -44,22 +44,30 @@ export interface FiltroCompras {
   compradorId?: number;
   categoria?: string;
   status?: "ativas" | "quitadas" | "todas";
+  /** Parceladas (2x ou mais), à vista (1x, ex.: importadas da fatura) ou todas. */
+  tipo?: "parceladas" | "avista" | "todas";
 }
 
 export async function listarCompras(periodo: Periodo, filtro: FiltroCompras = {}) {
-  const rows = await db.query.purchases.findMany({
-    orderBy: (p, { desc }) => [desc(p.createdAt)],
-    with: { card: true, comprador: true, installments: true },
-  });
+  const [rows, faturasPagas] = await Promise.all([
+    db.query.purchases.findMany({
+      orderBy: (p, { desc }) => [desc(p.createdAt)],
+      with: { card: true, comprador: true, installments: true },
+    }),
+    db.select({ cardId: invoices.cardId, competencia: invoices.competencia }).from(invoices).where(eq(invoices.status, "paga")),
+  ]);
   const atual = competenciaAtualISO();
+  // Parcela paga = fatura daquele mês marcada como paga (ou mês que já passou).
+  const pagas = new Set(faturasPagas.map((f) => `${f.cardId}|${f.competencia}`));
   const q = filtro.q?.trim().toLowerCase();
 
   const compras = rows
     .map((c) => {
       const parcelas = [...c.installments].sort((a, b) => a.numero - b.numero);
       const noPeriodo = parcelas.filter((p) => periodo.competencias.includes(p.competencia));
-      const pendentes = parcelas.filter((p) => p.competencia >= atual);
-      const feitas = parcelas.filter((p) => p.competencia < atual).length;
+      const paga = (p: { competencia: string }) => p.competencia < atual || pagas.has(`${c.cardId}|${p.competencia}`);
+      const pendentes = parcelas.filter((p) => !paga(p));
+      const feitas = parcelas.length - pendentes.length;
       return {
         ...c,
         installments: parcelas,
@@ -73,6 +81,9 @@ export async function listarCompras(periodo: Periodo, filtro: FiltroCompras = {}
       };
     })
     .filter((c) => c.temParcelaNoPeriodo)
+    .filter((c) =>
+      filtro.tipo === "parceladas" ? c.qtdParcelas > 1 : filtro.tipo === "avista" ? c.qtdParcelas <= 1 : true,
+    )
     .filter((c) => !filtro.cardId || c.cardId === filtro.cardId)
     .filter((c) => !filtro.compradorId || c.compradorId === filtro.compradorId)
     .filter((c) => !filtro.categoria || (c.categoria ?? "") === filtro.categoria)

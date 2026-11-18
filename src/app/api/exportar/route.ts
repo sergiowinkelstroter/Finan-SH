@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
       compradorId: inteiro(sp.comprador),
       categoria: um(sp.categoria),
       status: escolha(sp.status, ["ativas", "quitadas", "todas"] as const),
+      tipo: escolha(sp.compra, ["parceladas", "avista", "todas"] as const) ?? "parceladas",
     });
     linhas.push(["Descrição", "Cartão", "Comprador", "Categoria", "Total", "Parcelas", "No período", "Restante"]);
     for (const c of compras) {

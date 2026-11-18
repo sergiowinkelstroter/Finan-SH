@@ -2,7 +2,6 @@ import {
   BarChart3,
   CreditCard,
   Home,
-  Layers,
   LineChart,
   PiggyBank,
   Receipt,
@@ -14,6 +13,7 @@ import {
   Workflow,
   FileUp,
   type LucideIcon,
+  ShoppingBag,
 } from "lucide-react";
 
 export interface ItemNav {
@@ -42,7 +42,7 @@ export const GRUPOS_NAV: { titulo: string; itens: ItemNav[] }[] = [
     titulo: "Lançamentos",
     itens: [
       { href: "/faturas", label: "Faturas", icon: CreditCard },
-      { href: "/parcelas", label: "Parcelas", icon: Layers },
+      { href: "/parcelas", label: "Compras no cartão", icon: ShoppingBag },
       { href: "/saidas", label: "Saídas", icon: Receipt },
       { href: "/entradas", label: "Entradas", icon: TrendingUp },
       { href: "/reserva", label: "Reserva", icon: PiggyBank },

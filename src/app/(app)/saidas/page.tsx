@@ -1,4 +1,5 @@
-import { Download, Pencil, PiggyBank, Receipt } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, CreditCard, Download, Pencil, PiggyBank, Receipt } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,10 +18,11 @@ import { ehPrevisto, formatDataCurta, hojeISO } from "@/lib/dates";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatCents, parseReaisParaCents } from "@/lib/money";
-import { diasDoPeriodo, parsePeriodo } from "@/lib/periodo";
+import { diasDoPeriodo, parsePeriodo, periodoParaQuery } from "@/lib/periodo";
 import { escolha, inteiro, um, type SearchParams } from "@/lib/search";
 import { garantirRecorrencias } from "@/server/recorrencias";
 import { categoriasDeSaidas, listarSaidas } from "@/server/saidas";
+import { listarCompras } from "@/server/compras";
 import { listarAportesDoPeriodo } from "@/server/reserva";
 import { listarUsuarios } from "@/server/usuarios";
 
@@ -33,7 +35,7 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
   const max = um(sp.max);
 
   await garantirRecorrencias();
-  const [saidasBase, usuarios, usadas, aportesPeriodo] = await Promise.all([
+  const [saidasBase, usuarios, usadas, aportesPeriodo, comprasCartao] = await Promise.all([
     listarSaidas(periodo, {
       q: um(sp.q),
       categoria: um(sp.categoria),
@@ -45,7 +47,9 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
     listarUsuarios(),
     categoriasDeSaidas(),
     listarAportesDoPeriodo(periodo),
+    listarCompras(periodo, { tipo: "avista" }),
   ]);
+  const noCartaoCents = comprasCartao.reduce((t, c) => t + c.noPeriodoCents, 0);
 
   // Reserva é saída do mês: aportes entram na lista e resgates devolvem (valor negativo),
   // igual ao "Guardou" do Início.
@@ -186,6 +190,24 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
           <Stat rotulo="Gasto médio/dia" valor={formatCents(Math.round((total - totalReserva) / diasDoPeriodo(periodo)))} />
         </CardContent>
       </Card>
+
+      {noCartaoCents > 0 && (
+        <Link
+          href={`/parcelas?${new URLSearchParams({ ...periodoParaQuery(periodo), compra: "avista" }).toString()}`}
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-sm transition-colors hover:bg-muted/60"
+        >
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-violeta/10 text-violeta">
+            <CreditCard className="size-4" />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="font-medium text-foreground">À vista no cartão: {formatCents(noCartaoCents)}</span>
+            <span className="text-xs text-muted-foreground">
+              {comprasCartao.length} compra{comprasCartao.length === 1 ? "" : "s"}. Entram pela fatura, não somam aqui.
+            </span>
+          </span>
+          <ChevronRight className="size-4 text-muted-foreground" />
+        </Link>
+      )}
 
       {ranking.length > 1 && (
         <Card>
