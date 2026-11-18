@@ -59,37 +59,34 @@ export default async function ReservaPage({ searchParams }: { searchParams: Prom
       />
 
       <div className="grid gap-5 lg:grid-cols-5">
-        <section className="bg-hero relative flex flex-col justify-between gap-6 overflow-hidden rounded-[28px] p-6 text-white lg:col-span-2">
-          <div className="pointer-events-none absolute -right-14 -top-16 size-56 rounded-full bg-white/10 blur-2xl" aria-hidden />
-          <div className="relative flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20">
-              <PiggyBank className="size-5" />
-            </span>
-            <span className="text-sm text-white/80">Saldo da reserva</span>
+        <Card className="flex flex-col justify-between gap-5 p-5 lg:col-span-2 lg:p-6">
+          <div className="flex items-center gap-3">
+            <IconBubble icon={PiggyBank} cor="#10b981" />
+            <span className="text-sm text-muted-foreground">Saldo da reserva</span>
           </div>
-          <div className="relative">
-            <p className="font-display text-[clamp(2rem,11vw,2.75rem)] font-semibold leading-none tabular">{formatCents(reservaAtualCents)}</p>
+          <div>
+            <p className="font-display text-[clamp(2rem,11vw,2.75rem)] font-semibold leading-none tabular text-tinta">
+              {formatCents(reservaAtualCents)}
+            </p>
             {meta && (
-              <p className="mt-2 flex items-center gap-1.5 text-sm text-white/80">
-                <Target className="size-4" /> meta de {formatCents(meta.metaCents)}
+              <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Target className="size-4 text-violeta" /> meta de {formatCents(meta.metaCents)}
               </p>
             )}
           </div>
-          <div className="relative grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
-            <div className="rounded-2xl bg-white/12 p-3 ring-1 ring-white/15">
-              <span className="flex items-center gap-1 text-[11px] text-white/75">
-                <ArrowDownLeft className="size-3.5" /> Guardado no período
-              </span>
-              <span className="mt-0.5 block font-mono text-sm font-semibold tabular">+{formatCents(entrou)}</span>
+          <div className="grid grid-cols-1 gap-2">
+            <div className="flex items-center gap-3 rounded-2xl bg-muted/60 px-3 py-2.5">
+              <IconBubble icon={ArrowDownLeft} cor="#0ea88c" size="sm" />
+              <span className="flex-1 text-sm text-muted-foreground">Guardado no período</span>
+              <span className="whitespace-nowrap font-mono text-sm font-semibold tabular text-menta">+{formatCents(entrou)}</span>
             </div>
-            <div className="rounded-2xl bg-white/12 p-3 ring-1 ring-white/15">
-              <span className="flex items-center gap-1 text-[11px] text-white/75">
-                <ArrowUpRight className="size-3.5" /> Resgates
-              </span>
-              <span className="mt-0.5 block font-mono text-sm font-semibold tabular">{formatCents(saiu)}</span>
+            <div className="flex items-center gap-3 rounded-2xl bg-muted/60 px-3 py-2.5">
+              <IconBubble icon={ArrowUpRight} cor="#e2496b" size="sm" />
+              <span className="flex-1 text-sm text-muted-foreground">Resgates</span>
+              <span className="whitespace-nowrap font-mono text-sm font-semibold tabular text-rosa">{formatCents(saiu)}</span>
             </div>
           </div>
-        </section>
+        </Card>
 
         <div className="lg:col-span-3">
           <CardMetaReserva progresso={meta} saldoCents={reservaAtualCents} />

@@ -114,12 +114,6 @@
   box-shadow: 0 1px 2px rgb(26 24 48 / 0.04), 0 4px 16px -4px rgb(26 24 48 / 0.06);
 }
 
-@utility bg-hero {
-  background:
-    radial-gradient(120% 120% at 100% 0%, rgb(46 107 230 / 0.9) 0%, transparent 55%),
-    linear-gradient(135deg, #6c4cf0 0%, #5a3fd6 55%, #4a33b8 100%);
-}
-
 /* Valor que se ajusta à largura do card (o pai precisa de @container). */
 @utility num-fit {
   font-size: clamp(0.875rem, 13cqi, 1.375rem);
