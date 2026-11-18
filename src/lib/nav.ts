@@ -12,6 +12,7 @@ import {
   FolderCog,
   Table2,
   Workflow,
+  FileUp,
   type LucideIcon,
 } from "lucide-react";
 
@@ -45,6 +46,7 @@ export const GRUPOS_NAV: { titulo: string; itens: ItemNav[] }[] = [
       { href: "/saidas", label: "Saídas", icon: Receipt },
       { href: "/entradas", label: "Entradas", icon: TrendingUp },
       { href: "/reserva", label: "Reserva", icon: PiggyBank },
+      { href: "/importar", label: "Importar extrato", icon: FileUp },
     ],
   },
   {

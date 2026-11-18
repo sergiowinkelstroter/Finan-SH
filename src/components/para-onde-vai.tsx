@@ -102,16 +102,19 @@ export function ParaOndeVai({
       </ul>
 
       {pctSemCategoria >= 0.1 && (
-        <Link
-          href={hrefSemCategoria}
-          className="flex items-start gap-2 rounded-xl bg-[#f59e0b]/10 p-3 text-xs text-[#a16207] transition-colors hover:bg-[#f59e0b]/15"
-        >
+        <div className="flex items-start gap-2 rounded-xl bg-[#f59e0b]/10 p-3 text-xs text-[#a16207]">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
-          <span>
-            <strong>{formatPercentual(pctSemCategoria)}</strong> dos gastos ({formatCents(semCategoria)}) estão sem categoria.
-            Categorize saídas e compras do cartão para enxergar melhor para onde o dinheiro vai.
+          <span className="flex flex-col gap-1.5">
+            <span>
+              <strong>{formatPercentual(pctSemCategoria)}</strong> dos gastos ({formatCents(semCategoria)}) estão sem
+              categoria. Importe a fatura do cartão para ver cada compra já categorizada.
+            </span>
+            <span className="flex flex-wrap gap-3 font-semibold">
+              <Link href="/importar" className="underline-offset-2 hover:underline">Importar fatura →</Link>
+              <Link href={hrefSemCategoria} className="underline-offset-2 hover:underline">Ver sem categoria</Link>
+            </span>
           </span>
-        </Link>
+        </div>
       )}
 
       <Link href={hrefAnalise} className="inline-flex items-center gap-1 text-sm font-medium text-violeta hover:underline">

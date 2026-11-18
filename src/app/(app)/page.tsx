@@ -57,52 +57,54 @@ export default async function DashboardPage({
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Hero */}
-      <section className="bg-hero relative -mx-4 -mt-6 overflow-hidden px-5 pb-6 pt-7 text-white sm:mx-0 sm:mt-0 sm:rounded-[28px] lg:p-8">
-        <div className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-white/10 blur-2xl" aria-hidden />
-        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
-          <div className="flex flex-1 flex-col gap-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm text-white/75">{saudacao()},</p>
-                <p className="font-display text-lg font-semibold">{perfil ?? "casal"} 👋</p>
-              </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium capitalize ring-1 ring-white/20">
-                <CalendarRange className="size-3.5" /> {periodo.label}
-              </span>
-            </div>
+      {/* Saudação */}
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm text-muted-foreground">{saudacao()},</p>
+          <p className="font-display text-xl font-semibold text-foreground lg:text-2xl">{perfil ?? "casal"}</p>
+        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium capitalize text-muted-foreground shadow-card">
+          <CalendarRange className="size-3.5 text-violeta" /> {periodo.label}
+        </span>
+      </div>
 
+      {/* Destaque do mês */}
+      <Card className="p-5 lg:p-6">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-10">
+          <div className="flex flex-1 flex-col gap-4">
             <div>
-              <p className="text-sm text-white/80">
+              <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Wallet className="size-4 text-violeta" />
                 {mesAtual ? "Ainda podem gastar" : resumo.estourouTeto ? "Estourou o teto em" : "Sobrou do teto"}
               </p>
-              <p className="mt-1 font-display text-[44px] font-semibold leading-none tabular sm:text-[52px]">
+              <p
+                className={`mt-1.5 font-display text-[40px] font-semibold leading-none tabular sm:text-[48px] ${
+                  resumo.estourouTeto ? "text-rosa" : "text-tinta"
+                }`}
+              >
                 {formatCents(resumo.disponivelCents)}
               </p>
-              <div className="mt-2 [&_span]:!text-white/85">
+              <div className="mt-2">
                 <VariacaoBadge valor={resumo.deltaGasto} sufixo="de gasto vs. mês anterior" />
               </div>
             </div>
-
             <MedidorRitmo
               pctTeto={resumo.ritmo.pctTeto}
               pctMes={resumo.ritmo.pctMes}
               diaAtual={resumo.diaAtual}
               estourou={resumo.estourouTeto}
-              claro
             />
           </div>
 
-          <div className="flex flex-col gap-4 lg:w-[340px]">
-            <div className="grid grid-cols-3 gap-2">
-              <MiniStat icon={ArrowDownLeft} rotulo="Entrou" valor={analise.entradasCents} />
-              <MiniStat icon={ArrowUpRight} rotulo="Gastou" valor={analise.gastoCents} />
-              <MiniStat icon={PiggyBank} rotulo="Guardou" valor={analise.reservaCents} />
-            </div>
-            <AcoesRapidas dados={dados} />
+          <div className="grid grid-cols-3 gap-2 lg:w-[360px] lg:grid-cols-1 lg:gap-2.5">
+            <MiniStat icon={ArrowDownLeft} cor="#0ea88c" rotulo="Entrou" valor={analise.entradasCents} />
+            <MiniStat icon={ArrowUpRight} cor="#e2496b" rotulo="Gastou" valor={analise.gastoCents} />
+            <MiniStat icon={PiggyBank} cor="#10b981" rotulo="Guardou" valor={analise.reservaCents} />
           </div>
         </div>
-      </section>
+      </Card>
+
+      <AcoesRapidas dados={dados} className="lg:hidden" />
 
       <div className="lg:max-w-md">
         <SeletorPeriodo periodo={periodo} permitirIntervalo={false} />
@@ -270,13 +272,16 @@ export default async function DashboardPage({
   );
 }
 
-function MiniStat({ icon: Icon, rotulo, valor }: { icon: LucideIcon; rotulo: string; valor: number }) {
+function MiniStat({ icon: Icon, cor, rotulo, valor }: { icon: LucideIcon; cor: string; rotulo: string; valor: number }) {
   return (
-    <div className="rounded-2xl bg-white/12 p-2.5 ring-1 ring-white/15 backdrop-blur">
-      <span className="flex items-center gap-1 text-[11px] text-white/75">
-        <Icon className="size-3.5" /> {rotulo}
+    <div className="flex flex-col gap-2 rounded-2xl bg-muted/60 p-3 lg:flex-row lg:items-center lg:gap-3">
+      <span className="flex size-8 items-center justify-center rounded-full" style={{ background: `${cor}1f`, color: cor }}>
+        <Icon className="size-4" />
       </span>
-      <span className="mt-0.5 block truncate font-mono text-[13px] font-semibold tabular">{formatCents(valor)}</span>
+      <span className="flex min-w-0 flex-col lg:flex-1 lg:flex-row lg:items-center lg:justify-between">
+        <span className="text-[11px] text-muted-foreground lg:text-sm">{rotulo}</span>
+        <span className="truncate font-mono text-[13px] font-semibold tabular text-tinta lg:text-base">{formatCents(valor)}</span>
+      </span>
     </div>
   );
 }

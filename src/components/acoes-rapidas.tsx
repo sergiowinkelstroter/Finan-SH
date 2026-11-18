@@ -66,10 +66,13 @@ export function AcoesRapidas({ dados, className }: { dados: DadosAcoes; classNam
               key={a.id}
               type="button"
               onClick={() => setAcao(a.id)}
-              className="group flex flex-col items-center gap-1.5 text-xs font-medium text-white/90"
+              className="group flex flex-col items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              <span className="flex size-12 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20 backdrop-blur transition-colors group-hover:bg-white/25">
-                <Icon className="size-5 text-white" />
+              <span
+                className="flex size-14 items-center justify-center rounded-2xl shadow-card ring-1 ring-border/70 transition-transform group-hover:-translate-y-0.5 group-active:scale-95"
+                style={{ background: `color-mix(in srgb, ${a.cor} 10%, white)`, color: a.cor }}
+              >
+                <Icon className="size-6" />
               </span>
               {a.label}
             </button>

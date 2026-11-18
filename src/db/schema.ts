@@ -97,6 +97,8 @@ export const purchases = pgTable("purchases", {
   categoria: text("categoria"),
   /** Entra no acerto do casal (divisão 50/50). */
   compartilhada: boolean("compartilhada").notNull().default(true),
+  /** Identificador do lançamento no extrato importado (evita importar duas vezes). */
+  origemId: text("origem_id").unique("purchases_origem_id_unique"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -174,6 +176,8 @@ export const expenses = pgTable(
       () => recurringExpenses.id,
       { onDelete: "set null" },
     ),
+    /** Identificador do lançamento no extrato importado (evita importar duas vezes). */
+    origemId: text("origem_id").unique("expenses_origem_id_unique"),
   },
   (table) => [
     index("expenses_data_idx").on(table.data),
@@ -195,6 +199,16 @@ export const savingsEntries = pgTable("savings_entries", {
   data: date("data").notNull(),
   valorCents: bigint("valor_cents", { mode: "number" }).notNull(),
   descricao: text("descricao"),
+});
+
+/** Regras de categorização automática: descrição contém `padrao` → `categoria`. */
+export const categoryRules = pgTable("category_rules", {
+  id: serial("id").primaryKey(),
+  padrao: text("padrao").notNull().unique("category_rules_padrao_unique"),
+  categoria: text("categoria").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 export const settings = pgTable("settings", {

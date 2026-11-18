@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LogOut, Menu, Plus, UserRound } from "lucide-react";
+import { FileUp, LogOut, Menu, Plus, UserRound } from "lucide-react";
 import { ABAS_MOBILE, ativo, GRUPOS_NAV, ROTULO_CURTO, TODOS_ITENS } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -162,6 +162,19 @@ export function BottomNav({ perfil, dados }: { perfil: string | null; dados: Dad
                 </button>
               );
             })}
+            <Link
+              href="/importar"
+              onClick={() => setNovoAberto(false)}
+              className="col-span-2 flex items-center gap-3 rounded-2xl border border-dashed border-violeta/40 bg-violeta/5 p-4 text-left transition-colors hover:bg-violeta/10"
+            >
+              <span className="flex size-10 items-center justify-center rounded-full bg-violeta/15 text-violeta">
+                <FileUp className="size-5" />
+              </span>
+              <span className="flex flex-col">
+                <span className="font-semibold text-foreground">Importar fatura ou extrato</span>
+                <span className="text-xs text-muted-foreground">CSV/OFX do banco, já categorizado</span>
+              </span>
+            </Link>
           </div>
         </SheetContent>
       </Sheet>
