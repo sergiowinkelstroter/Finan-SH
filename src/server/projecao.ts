@@ -10,6 +10,7 @@ import { getComprometidoPorMes } from "./compras";
 import { entradasPorMes } from "./entradas";
 import { tetosPorMes } from "./orcamento";
 import { recorrenciasPorMes } from "./recorrencias";
+import { getAporteDoMes, getAportePlanejado } from "./reserva";
 
 export interface LinhaProjecao {
   competencia: string;
@@ -18,6 +19,7 @@ export interface LinhaProjecao {
   comprometidoCents: number; // parcelas de cartão
   recorrentesCents: number; // contas fixas recorrentes
   saidasVariaveisCents: number; // saídas avulsas atuais ou estimadas
+  reservaCents: number; // quanto vai para a reserva (saída do mês)
   entradasCents: number;
   tetoCents: number;
   saldoProjetadoCents: number; // entradas menos compromissos e despesas estimadas
@@ -29,6 +31,8 @@ export interface Projecao {
   linhas: LinhaProjecao[];
   estimativasVariaveis: { chave: string; categoria: string | null; label: string; mediaMensalCents: number; atualCents: number }[];
   proporcaoRestanteMesAtual: number;
+  aportePlanejadoCents: number;
+  aporteMesAtualCents: number;
   totalEntradasCents: number;
   totalComprometidoCents: number;
   piorMes: LinhaProjecao | null;
@@ -40,7 +44,7 @@ export async function getProjecao(meses = 12): Promise<Projecao> {
   const comps = Array.from({ length: meses }, (_, i) => addMesesCompetencia(inicio, i));
   const inicioHistorico = addMesesCompetencia(inicio, -3);
   const hoje = hojeISO();
-  const [comprometidoMapa, entradas, tetos, recorrentes, historico, atuais] = await Promise.all([
+  const [comprometidoMapa, entradas, tetos, recorrentes, historico, atuais, aportePlanejadoCents, aporteMesAtualCents] = await Promise.all([
     getComprometidoPorMes(),
     entradasPorMes(comps),
     tetosPorMes(comps),
@@ -53,6 +57,8 @@ export async function getProjecao(meses = 12): Promise<Projecao> {
       where: and(gte(expenses.data, inicio), lte(expenses.data, hoje), isNull(expenses.recorrenciaId)),
       columns: { categoria: true, valorCents: true },
     }),
+    getAportePlanejado(),
+    getAporteDoMes(inicio),
   ]);
 
   const porCategoria = new Map<string, { categoria: string | null; historicoCents: number; atualCents: number }>();
@@ -85,7 +91,8 @@ export async function getProjecao(meses = 12): Promise<Projecao> {
     const entradasCents = entradas.get(competencia) ?? 0;
     const saidasVariaveisCents = estimativasVariaveis.reduce((s, e) =>
       s + (i === 0 ? e.atualCents + Math.round(e.mediaMensalCents * proporcaoRestanteMesAtual) : e.mediaMensalCents), 0);
-    const saldoProjetadoCents = entradasCents - comprometidoCents - recorrentesCents - saidasVariaveisCents;
+    const reservaCents = i === 0 ? Math.max(aporteMesAtualCents, aportePlanejadoCents) : aportePlanejadoCents;
+    const saldoProjetadoCents = entradasCents - comprometidoCents - recorrentesCents - saidasVariaveisCents - reservaCents;
     acumulado += saldoProjetadoCents;
     return {
       competencia,
@@ -94,6 +101,7 @@ export async function getProjecao(meses = 12): Promise<Projecao> {
       comprometidoCents,
       recorrentesCents,
       saidasVariaveisCents,
+      reservaCents,
       entradasCents,
       tetoCents: tetos.get(competencia) ?? 0,
       saldoProjetadoCents,
@@ -110,8 +118,10 @@ export async function getProjecao(meses = 12): Promise<Projecao> {
     linhas,
     estimativasVariaveis,
     proporcaoRestanteMesAtual,
+    aportePlanejadoCents,
+    aporteMesAtualCents,
     totalEntradasCents: linhas.reduce((s, l) => s + l.entradasCents, 0),
-    totalComprometidoCents: linhas.reduce((s, l) => s + l.comprometidoCents + l.recorrentesCents + l.saidasVariaveisCents, 0),
+    totalComprometidoCents: linhas.reduce((s, l) => s + l.comprometidoCents + l.recorrentesCents + l.saidasVariaveisCents + l.reservaCents, 0),
     piorMes,
     mesesNegativos: linhas.filter((l) => l.saldoProjetadoCents < 0).length,
   };

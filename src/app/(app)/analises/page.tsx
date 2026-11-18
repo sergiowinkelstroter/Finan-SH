@@ -1,4 +1,7 @@
+import { ArrowDownLeft, ArrowUpRight, BarChart3, PiggyBank, Receipt, Wallet } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CategoriaIcone } from "@/components/categoria-icone";
+import { EmptyState, ListItem, PageHeader, StatCard } from "@/components/ds";
 import { SeletorPeriodo } from "@/components/seletor-periodo";
 import { VariacaoBadge } from "@/components/variacao-badge";
 import { CardAcerto } from "@/components/card-acerto";
@@ -6,6 +9,7 @@ import { BarChart } from "@/components/charts/bar-chart";
 import { DonutChart } from "@/components/charts/donut-chart";
 import { HBarList } from "@/components/charts/hbar-list";
 import { LineChart } from "@/components/charts/line-chart";
+import { SankeyFluxo } from "@/components/charts/sankey-fluxo";
 import { formatDataCurta } from "@/lib/dates";
 import { formatCents, formatPercentual } from "@/lib/money";
 import { diasDoPeriodo, parsePeriodo } from "@/lib/periodo";
@@ -22,43 +26,52 @@ export default async function AnalisesPage({ searchParams }: { searchParams: Pro
   const varios = atual.porMes.length > 1;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h1 className="font-display text-xl font-semibold text-foreground lg:text-2xl">Análises</h1>
-          <p className="text-sm capitalize text-muted-foreground">{periodo.label}</p>
-        </div>
-        <div className="lg:w-[420px]">
-          <SeletorPeriodo periodo={periodo} />
-        </div>
+    <div className="flex flex-col gap-5">
+      <PageHeader
+        icon={BarChart3}
+        titulo="Análises"
+        subtitulo={<span className="capitalize">{periodo.label}</span>}
+      />
+
+      <div className="lg:max-w-md">
+        <SeletorPeriodo periodo={periodo} />
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi titulo="Entradas" valor={formatCents(atual.entradasCents)} cor="text-menta">
-          <VariacaoBadge valor={deltaEntradas} inverso={false} sufixo="vs. anterior" />
-        </Kpi>
-        <Kpi titulo="Gastos" valor={formatCents(atual.gastoCents)}>
-          <VariacaoBadge valor={deltaGasto} sufixo="vs. anterior" />
-        </Kpi>
-        <Kpi
+        <StatCard
+          icon={ArrowDownLeft}
+          cor="#0ea88c"
+          titulo="Entradas"
+          valor={formatCents(atual.entradasCents)}
+          tom="positivo"
+          detalhe={<VariacaoBadge valor={deltaEntradas} inverso={false} sufixo="vs. anterior" />}
+        />
+        <StatCard
+          icon={ArrowUpRight}
+          cor="#e2496b"
+          titulo="Gastos"
+          valor={formatCents(atual.gastoCents)}
+          detalhe={<VariacaoBadge valor={deltaGasto} sufixo="vs. anterior" />}
+        />
+        <StatCard
+          icon={Wallet}
+          cor="#6c4cf0"
           titulo="Sobra"
           valor={formatCents(atual.sobraCents)}
-          cor={atual.sobraCents < 0 ? "text-rosa" : "text-menta"}
-        >
-          <span className="text-xs text-muted-foreground">anterior: {formatCents(anterior.sobraCents)}</span>
-        </Kpi>
-        <Kpi
+          tom={atual.sobraCents < 0 ? "negativo" : "positivo"}
+          detalhe={`anterior: ${formatCents(anterior.sobraCents)}`}
+        />
+        <StatCard
+          icon={PiggyBank}
+          cor="#10b981"
           titulo="Taxa de poupança"
           valor={atual.taxaPoupanca == null ? "—" : formatPercentual(atual.taxaPoupanca)}
-          cor={atual.taxaPoupanca != null && atual.taxaPoupanca < 0 ? "text-rosa" : undefined}
-        >
-          <span className="text-xs text-muted-foreground">
-            {formatCents(Math.round(atual.gastoCents / dias))}/dia em média
-          </span>
-        </Kpi>
+          tom={atual.taxaPoupanca != null && atual.taxaPoupanca < 0 ? "negativo" : undefined}
+          detalhe={`${formatCents(Math.round(atual.gastoCents / dias))}/dia em média`}
+        />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>{varios ? "Entradas × gastos por mês" : "Entradas × gastos × teto"}</CardTitle>
@@ -103,6 +116,20 @@ export default async function AnalisesPage({ searchParams }: { searchParams: Pro
         </Card>
       </div>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Para onde foi o dinheiro</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SankeyFluxo
+            entradasCents={atual.entradasCents}
+            reservaCents={atual.reservaCents}
+            categorias={atual.porCategoriaOrigem}
+            altura={340}
+          />
+        </CardContent>
+      </Card>
+
       {varios && (
         <Card>
           <CardHeader>
@@ -111,13 +138,16 @@ export default async function AnalisesPage({ searchParams }: { searchParams: Pro
           <CardContent>
             <LineChart
               labels={atual.porMes.map((l) => l.label)}
-              series={[{ nome: "Sobra", cor: "#6c4cf0", valores: atual.porMes.map((l) => l.entradasCents - l.gastoCents) }]}
+              series={[
+                { nome: "Sobra", cor: "#6c4cf0", valores: atual.porMes.map((l) => l.entradasCents - l.gastoCents) },
+                { nome: "Guardado", cor: "#0ea88c", tracejada: true, valores: atual.porMes.map((l) => l.reservaCents) },
+              ]}
             />
           </CardContent>
         </Card>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Categorias vs. período anterior</CardTitle>
@@ -136,28 +166,38 @@ export default async function AnalisesPage({ searchParams }: { searchParams: Pro
           </CardContent>
         </Card>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5">
           <CardAcerto acerto={atual.acerto} usuarios={atual.usuarios} />
           <Card>
             <CardHeader>
               <CardTitle>Maiores saídas</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-2.5">
+            <CardContent className="-mx-4 -mb-2 flex flex-col">
               {atual.maioresSaidas.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhuma saída no período.</p>
+                <EmptyState icon={Receipt} titulo="Nenhuma saída no período" className="mx-4 mb-4" />
               ) : (
-                atual.maioresSaidas.map((s) => (
-                  <div key={s.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="flex min-w-0 flex-col">
-                      <span className="truncate text-foreground">{s.descricao}</span>
-                      <span className="text-xs text-muted-foreground">
+                atual.maioresSaidas.map((s, i) => (
+                  <ListItem
+                    key={s.id}
+                    className="py-2.5"
+                    leading={
+                      <span className="relative">
+                        <CategoriaIcone nome={s.categoria} />
+                        <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-tinta text-[9px] font-bold text-white">
+                          {i + 1}
+                        </span>
+                      </span>
+                    }
+                    titulo={s.descricao}
+                    subtitulo={
+                      <>
                         {formatDataCurta(s.data)}
                         {s.categoria ? ` · ${s.categoria}` : ""}
-                        {s.id < 0 ? " · previsão recorrente" : ""}
-                      </span>
-                    </span>
-                    <span className="font-mono tabular text-tinta">{formatCents(s.valorCents)}</span>
-                  </div>
+                        {s.id < 0 ? " · previsto" : ""}
+                      </>
+                    }
+                    trailing={<span className="font-mono text-sm font-semibold tabular text-tinta">{formatCents(s.valorCents)}</span>}
+                  />
                 ))
               )}
             </CardContent>
@@ -170,27 +210,5 @@ export default async function AnalisesPage({ searchParams }: { searchParams: Pro
         saídas pela data exata, incluindo previsões virtuais de recorrências futuras. Comparação feita com o período imediatamente anterior, de mesma duração.
       </p>
     </div>
-  );
-}
-
-function Kpi({
-  titulo,
-  valor,
-  cor,
-  children,
-}: {
-  titulo: string;
-  valor: string;
-  cor?: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <Card>
-      <CardContent className="flex flex-col gap-1 p-4">
-        <span className="text-xs text-muted-foreground">{titulo}</span>
-        <span className={`font-mono text-lg font-semibold tabular lg:text-xl ${cor ?? "text-tinta"}`}>{valor}</span>
-        {children}
-      </CardContent>
-    </Card>
   );
 }

@@ -51,3 +51,8 @@ export function normalizarCategoria(valor: string | null | undefined): string | 
   if (!v) return null;
   return v.charAt(0).toUpperCase() + v.slice(1);
 }
+
+export const RESERVA = "Reserva";
+export const LIVRE = "Livre";
+export const COR_RESERVA = "#0ea88c";
+export const COR_LIVRE = "#c9c3f5";

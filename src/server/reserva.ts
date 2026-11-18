@@ -67,6 +67,23 @@ export async function getEvolucaoReserva(periodo: Periodo, conta = "principal") 
   });
 }
 
+/** Quanto o casal planeja guardar por mês (usado na projeção e na planilha). */
+export async function getAportePlanejado() {
+  const [row] = await db.select().from(settings).where(eq(settings.chave, "aporte_planejado_cents"));
+  const v = Number(row?.valor ?? 0);
+  return Number.isFinite(v) && v > 0 ? v : 0;
+}
+
+/** Aporte líquido de um mês (competência yyyy-MM-01). */
+export async function getAporteDoMes(competencia: string, conta = "principal") {
+  const fim = addMesesCompetencia(competencia, 1);
+  const [r] = await db
+    .select({ total: sql<string>`coalesce(sum(${savingsEntries.valorCents}), 0)` })
+    .from(savingsEntries)
+    .where(and(eq(savingsEntries.conta, conta), gte(savingsEntries.data, competencia), sql`${savingsEntries.data} < ${fim}`));
+  return Number(r.total);
+}
+
 export async function getMetaReserva() {
   const rows = await db.select().from(settings);
   const valor = (k: string) => rows.find((r) => r.chave === k)?.valor;

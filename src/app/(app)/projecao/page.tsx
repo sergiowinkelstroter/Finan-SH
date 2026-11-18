@@ -1,5 +1,10 @@
 import Link from "next/link";
+import { LineChart as LineChartIcon, Table2 } from "lucide-react";
 import { ProjecaoInterativa } from "@/components/projecao-interativa";
+import { AportePlanejadoForm } from "@/components/aporte-planejado-form";
+import { PageHeader, SegmentedLinks } from "@/components/ds";
+import { Card, CardContent } from "@/components/ui/card";
+import { formatCents } from "@/lib/money";
 import { escolha, type SearchParams } from "@/lib/search";
 import { getProjecao } from "@/server/projecao";
 
@@ -12,22 +17,34 @@ export default async function ProjecaoPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="font-display text-xl font-semibold text-foreground lg:text-2xl">Projeção</h1>
-        <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1 text-sm font-medium">
-          {HORIZONTES.map((h) => (
+      <PageHeader
+        icon={LineChartIcon}
+        titulo="Projeção"
+        subtitulo="Entradas contra compromissos e gastos estimados nos próximos meses."
+        acoes={
+          <div className="flex items-center gap-2">
             <Link
-              key={h}
-              href={`/projecao?meses=${h}`}
-              className={`rounded-md px-3 py-1 text-center transition-colors ${
-                h === horizonte ? "bg-card text-violeta shadow-sm" : "text-muted-foreground hover:text-foreground"
-              }`}
+              href={`/planilha?meses=${horizonte}`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground shadow-card hover:text-foreground"
             >
-              {h}m
+              <Table2 className="size-4" /> Planilha
             </Link>
-          ))}
-        </div>
-      </div>
+            <SegmentedLinks
+              ativo={horizonte}
+              opcoes={HORIZONTES.map((h) => ({ valor: h, label: `${h}m`, href: `/projecao?meses=${h}` }))}
+            />
+          </div>
+        }
+      />
+
+      <Card>
+        <CardContent className="flex flex-col gap-1.5 p-4">
+          <AportePlanejadoForm valorCents={projecao.aportePlanejadoCents} />
+          <p className="text-xs text-muted-foreground">
+            A reserva conta como saída do mês. No mês atual vale o maior entre o planejado e o já guardado ({formatCents(projecao.aporteMesAtualCents)}).
+          </p>
+        </CardContent>
+      </Card>
 
       <ProjecaoInterativa
         linhas={projecao.linhas}

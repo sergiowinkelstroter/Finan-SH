@@ -15,7 +15,7 @@ export function AlertasVencimento({ alertas }: { alertas: AlertaVencimento[] }) 
           <Link
             key={`${fatura.card.id}-${fatura.competencia}`}
             href={`/faturas?mes=${fatura.competencia.slice(0, 7)}`}
-            className={`flex items-center gap-3 rounded-xl border p-3 text-sm transition-colors ${
+            className={`flex items-center gap-3 rounded-2xl border p-3 text-sm shadow-card transition-colors ${
               atrasada
                 ? "border-rosa/40 bg-rosa/10 text-rosa"
                 : dias <= 2
@@ -23,7 +23,9 @@ export function AlertasVencimento({ alertas }: { alertas: AlertaVencimento[] }) 
                   : "border-border bg-card text-foreground"
             }`}
           >
-            <Icon className="size-5 shrink-0" />
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-current/10">
+              <Icon className="size-[18px]" />
+            </span>
             <span className="flex-1">
               <strong>{fatura.card.nome}</strong>{" "}
               {atrasada

@@ -25,8 +25,21 @@ import { hojeISO } from "@/lib/dates";
 import { parseReaisParaCents } from "@/lib/money";
 import { registrarAporte } from "@/server/reserva-actions";
 
-export function AporteFormDialog() {
-  const [open, setOpen] = useState(false);
+export function AporteFormDialog({
+  trigger,
+  open: openControlado,
+  onOpenChange,
+}: {
+  trigger?: React.ReactNode | null;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+} = {}) {
+  const [openInterno, setOpenInterno] = useState(false);
+  const open = openControlado ?? openInterno;
+  const setOpen = (v: boolean) => {
+    setOpenInterno(v);
+    onOpenChange?.(v);
+  };
   const [pending, startTransition] = useTransition();
 
   const [tipo, setTipo] = useState<"aporte" | "resgate">("aporte");
@@ -63,14 +76,18 @@ export function AporteFormDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus /> Novo lançamento
-        </Button>
-      </DialogTrigger>
+      {trigger !== null && (
+        <DialogTrigger asChild>
+          {trigger ?? (
+            <Button>
+              <Plus /> Novo lançamento
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Aporte ou resgate</DialogTitle>
+          <DialogTitle>Guardar ou resgatar da reserva</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -82,7 +99,7 @@ export function AporteFormDialog() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="aporte">Aporte</SelectItem>
+                  <SelectItem value="aporte">Guardar (aporte)</SelectItem>
                   <SelectItem value="resgate">Resgate</SelectItem>
                 </SelectContent>
               </Select>

@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Calculator } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { IconBubble } from "@/components/ds";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { projecaoReserva } from "@/lib/calculos";
@@ -29,11 +31,15 @@ export function SimuladorReserva({ saldoInicialCents }: { saldoInicialCents: num
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Simulador</CardTitle>
+      <CardHeader className="flex-row items-center gap-3">
+        <IconBubble icon={Calculator} size="sm" />
+        <div>
+          <CardTitle>Simulador</CardTitle>
+          <p className="mt-0.5 text-xs text-muted-foreground">Quanto a reserva vira guardando todo mês.</p>
+        </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="aporteMensal">Aporte/mês</Label>
             <Input
@@ -66,18 +72,18 @@ export function SimuladorReserva({ saldoInicialCents }: { saldoInicialCents: num
           </div>
         </div>
 
-        <div className="flex justify-between gap-2 border-t border-border pt-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {marcos.map((m) => (
-            <div key={m} className="flex flex-col items-center gap-1">
+            <div key={m} className="flex flex-col gap-1 rounded-2xl bg-muted/60 p-3">
               <span className="text-xs text-muted-foreground">{m} meses</span>
-              <span className="font-mono text-sm tabular text-tinta">
+              <span className="font-mono text-sm font-semibold tabular text-tinta">
                 {formatCents(saldos[m - 1])}
               </span>
             </div>
           ))}
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-xs text-muted-foreground">em {saldos.length} meses</span>
-            <span className="font-mono text-sm font-medium tabular text-violeta">
+          <div className="flex flex-col gap-1 rounded-2xl bg-violeta/10 p-3">
+            <span className="text-xs text-violeta/80">em {saldos.length} meses</span>
+            <span className="font-mono text-sm font-semibold tabular text-violeta">
               {formatCents(saldos[saldos.length - 1])}
             </span>
           </div>

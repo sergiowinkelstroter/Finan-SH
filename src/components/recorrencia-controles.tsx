@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { toast } from "sonner";
+import { Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { alternarRecorrencia, excluirRecorrencia } from "@/server/recorrencias-actions";
@@ -15,6 +16,7 @@ export function RecorrenciaControles({ id, ativo, descricao }: { id: number; ati
         variant="ghost"
         size="sm"
         disabled={pending}
+        aria-label={ativo ? "Pausar" : "Reativar"}
         onClick={() =>
           start(async () => {
             try {
@@ -26,7 +28,8 @@ export function RecorrenciaControles({ id, ativo, descricao }: { id: number; ati
           })
         }
       >
-        {ativo ? "Pausar" : "Reativar"}
+        {ativo ? <Pause /> : <Play />}
+        <span className="hidden sm:inline">{ativo ? "Pausar" : "Reativar"}</span>
       </Button>
       <ConfirmDeleteButton itemLabel={`"${descricao}"`} onConfirm={() => excluirRecorrencia(id)} />
     </>

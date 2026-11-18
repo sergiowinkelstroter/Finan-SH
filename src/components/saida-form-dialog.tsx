@@ -42,14 +42,23 @@ export function SaidaFormDialog({
   usuarios,
   saida,
   trigger,
+  open: openControlado,
+  onOpenChange,
   categorias = [],
 }: {
   categorias?: string[];
   usuarios: Usuario[];
   saida?: SaidaExistente;
-  trigger?: React.ReactNode;
+  trigger?: React.ReactNode | null;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openInterno, setOpenInterno] = useState(false);
+  const open = openControlado ?? openInterno;
+  const setOpen = (v: boolean) => {
+    setOpenInterno(v);
+    onOpenChange?.(v);
+  };
   const [pending, startTransition] = useTransition();
 
   const [descricao, setDescricao] = useState(saida?.descricao ?? "");
@@ -92,6 +101,7 @@ export function SaidaFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+      {trigger !== null && (
       <DialogTrigger asChild>
         {trigger ?? (
           <Button>
@@ -99,6 +109,7 @@ export function SaidaFormDialog({
           </Button>
         )}
       </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{saida ? "Editar saída" : "Nova saída"}</DialogTitle>

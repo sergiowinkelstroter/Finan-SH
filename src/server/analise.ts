@@ -20,6 +20,7 @@ import { parcelasNasCompetencias } from "./compras";
 import { saidasNoPeriodo } from "./saidas";
 import { tetosPorMes } from "./orcamento";
 import { listarUsuarios } from "./usuarios";
+import { listarAportesDoPeriodo } from "./reserva";
 import { invoices } from "@/db/schema";
 import { inArray } from "drizzle-orm";
 
@@ -30,6 +31,8 @@ export interface LinhaMes {
   gastoCents: number;
   gastoCartoesCents: number;
   gastoSaidasCents: number;
+  /** Aportes líquidos na reserva no mês — tratados como saída do mês. */
+  reservaCents: number;
   tetoCents: number;
 }
 
@@ -48,6 +51,12 @@ export interface Analise {
   gastoSaidasCents: number;
   gastoTipo: TipoValor;
   sobraCents: number;
+  /** Aportes líquidos na reserva no período (saída "para guardar"). */
+  reservaCents: number;
+  /** Entradas − gastos − reserva: o que sobrou solto. */
+  livreCents: number;
+  /** Gasto por categoria separado por origem (cartão × saída avulsa). */
+  porCategoriaOrigem: { nome: string; cor: string; cartaoCents: number; saidasCents: number }[];
   /** sobra / entradas (null sem entradas). */
   taxaPoupanca: number | null;
   porMes: LinhaMes[];
@@ -62,7 +71,7 @@ export interface Analise {
 
 export async function getAnalise(periodo: Periodo): Promise<Analise> {
   const comps = periodo.competencias;
-  const [cartoes, invoicesRows, parcelas, saidas, entradasMapa, tetosMapa, usuarios] =
+  const [cartoes, invoicesRows, parcelas, saidas, entradasMapa, tetosMapa, usuarios, aportes] =
     await Promise.all([
       db.query.cards.findMany({
         where: eq(cards.ativo, true),
@@ -74,13 +83,20 @@ export async function getAnalise(periodo: Periodo): Promise<Analise> {
       entradasPorMes(comps),
       tetosPorMes(comps),
       listarUsuarios(),
+      listarAportesDoPeriodo(periodo),
     ]);
 
   const faturasPorMes = montarFaturas(cartoes, invoicesRows, parcelas, comps);
 
   const categorias = new Map<string, number>();
-  const somar = (nome: string, cents: number) => {
-    if (cents > 0) categorias.set(nome, (categorias.get(nome) ?? 0) + cents);
+  const origem = new Map<string, { cartaoCents: number; saidasCents: number }>();
+  const somar = (nome: string, cents: number, de: "cartao" | "saidas" = "cartao") => {
+    if (cents <= 0) return;
+    categorias.set(nome, (categorias.get(nome) ?? 0) + cents);
+    const o = origem.get(nome) ?? { cartaoCents: 0, saidasCents: 0 };
+    if (de === "cartao") o.cartaoCents += cents;
+    else o.saidasCents += cents;
+    origem.set(nome, o);
   };
 
   // ── Cartões: distribui o valor efetivo de cada fatura entre as categorias das parcelas
@@ -95,6 +111,7 @@ export async function getAnalise(periodo: Periodo): Promise<Analise> {
         gastoCents: 0,
         gastoCartoesCents: 0,
         gastoSaidasCents: 0,
+        reservaCents: 0,
         tetoCents: tetosMapa.get(c) ?? 0,
       },
     ]),
@@ -126,10 +143,16 @@ export async function getAnalise(periodo: Periodo): Promise<Analise> {
 
   // ── Saídas avulsas
   for (const s of saidas) {
-    somar(s.categoria ?? SEM_CATEGORIA, s.valorCents);
+    somar(s.categoria ?? SEM_CATEGORIA, s.valorCents, "saidas");
     const linha = porMesMap.get(`${s.data.slice(0, 7)}-01`);
     if (linha) linha.gastoSaidasCents += s.valorCents;
     if (s.compartilhada && s.pagoPor) pagamentos.push({ userId: s.pagoPor, cents: s.valorCents });
+  }
+
+  // ── Reserva: aporte é dinheiro que sai do mês (resgate devolve)
+  for (const a of aportes) {
+    const linha = porMesMap.get(`${a.data.slice(0, 7)}-01`);
+    if (linha) linha.reservaCents += a.valorCents;
   }
 
   const porMes = [...porMesMap.values()].map((l) => ({
@@ -140,6 +163,7 @@ export async function getAnalise(periodo: Periodo): Promise<Analise> {
   const entradasCents = soma("entradasCents");
   const gastoCents = soma("gastoCents");
   const sobraCents = entradasCents - gastoCents;
+  const reservaCents = soma("reservaCents");
 
   const porCategoria = [...categorias.entries()]
     .map(([nome, cents]) => ({ nome, cents, cor: corCategoria(nome) }))
@@ -159,6 +183,11 @@ export async function getAnalise(periodo: Periodo): Promise<Analise> {
     gastoSaidasCents: soma("gastoSaidasCents"),
     gastoTipo: tipoMenosConfiavel(tipos),
     sobraCents,
+    reservaCents,
+    livreCents: sobraCents - reservaCents,
+    porCategoriaOrigem: [...origem.entries()]
+      .map(([nome, o]) => ({ nome, cor: corCategoria(nome), ...o }))
+      .sort((a, b) => b.cartaoCents + b.saidasCents - (a.cartaoCents + a.saidasCents)),
     taxaPoupanca: entradasCents > 0 ? sobraCents / entradasCents : null,
     porMes,
     porCategoria,

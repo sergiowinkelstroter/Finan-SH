@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { CheckCircle2, CircleDot, CreditCard, Lock, LockKeyhole, RefreshCw, RotateCcw, Wallet } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,22 +38,34 @@ export function FaturaRow({
   const { card, invoice } = fatura;
   const status = invoice?.status ?? "aberta";
 
+  const vencida = status !== "paga" && fatura.valorCents > 0 && fatura.vencimento < hojeISO();
+  const StatusIcon = status === "paga" ? CheckCircle2 : status === "fechada" ? Lock : CircleDot;
+
   return (
-    <Card>
-      <CardContent className="flex flex-col gap-3 p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-col">
-            <span className="font-medium text-foreground">{card.nome}</span>
-            <span className="text-xs text-muted-foreground">
-              fecha dia {card.diaFechamento} · vence {formatDataCurta(fatura.vencimento)}
-            </span>
-            {status !== "paga" && fatura.valorCents > 0 && fatura.vencimento < hojeISO() && (
-              <Badge variant="destructive" className="mt-1 w-fit">
-                vencida
-              </Badge>
-            )}
+    <Card className="flex flex-col overflow-hidden">
+      <div
+        className={cn(
+          "relative flex flex-col gap-4 overflow-hidden p-4 text-white",
+          status === "paga" ? "bg-gradient-to-br from-[#0ea88c] to-[#0b8a73]" : "bg-gradient-to-br from-violeta to-azul",
+        )}
+      >
+        <div className="pointer-events-none absolute -right-10 -top-12 size-36 rounded-full bg-white/10" aria-hidden />
+        <div className="relative flex items-start justify-between gap-3">
+          <span className="flex min-w-0 items-center gap-2">
+            <CreditCard className="size-5 shrink-0 opacity-90" />
+            <span className="truncate font-display text-base font-semibold">{card.nome}</span>
+          </span>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold capitalize ring-1 ring-white/25">
+            <StatusIcon className="size-3" />
+            {status}
+          </span>
+        </div>
+        <div className="relative flex items-end justify-between gap-3">
+          <div className="flex flex-col text-xs text-white/80">
+            <span>fecha dia {card.diaFechamento}</span>
+            <span>vence {formatDataCurta(fatura.vencimento)}</span>
           </div>
-          <div className="flex flex-col items-end gap-1">
+          <div className="rounded-xl bg-white px-2.5 py-1 shadow-sm">
             <ValorEfetivo
               valorCents={fatura.valorCents}
               tipo={fatura.tipo}
@@ -59,16 +73,20 @@ export function FaturaRow({
                 invoice?.parcialAtualizadoEm ? diasDesde(invoice.parcialAtualizadoEm) : null
               }
             />
-            {status === "fechada" && <Badge variant="muted">fechada</Badge>}
-            {status === "paga" && (
-              <Badge variant="success">
-                paga{invoice?.pagoEm ? ` em ${formatDataCurta(invoice.pagoEm)}` : ""}
-              </Badge>
-            )}
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-wrap gap-2">
+      <CardContent className="flex flex-1 flex-col gap-3 p-4">
+        {(vencida || (status === "paga" && invoice?.pagoEm)) && (
+          <div className="flex flex-wrap gap-1.5">
+            {vencida && <Badge variant="destructive">vencida</Badge>}
+            {status === "paga" && invoice?.pagoEm && (
+              <Badge variant="success">paga em {formatDataCurta(invoice.pagoEm)}</Badge>
+            )}
+          </div>
+        )}
+        <div className="mt-auto flex flex-wrap gap-2">
           {status === "aberta" && (
             <>
               <AtualizarParcialDialog
@@ -127,7 +145,7 @@ function AtualizarParcialDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="secondary" size="sm">
-          Atualizar parcial
+          <RefreshCw /> Atualizar parcial
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -192,7 +210,7 @@ function FecharFaturaDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          Fechar fatura
+          <LockKeyhole /> Fechar fatura
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -246,8 +264,8 @@ function MarcarPagaDialog({ invoiceId }: { invoiceId: number }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="secondary" size="sm">
-          Marcar paga
+        <Button size="sm">
+          <Wallet /> Marcar paga
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -289,7 +307,7 @@ function ReabrirButton({ invoiceId }: { invoiceId: number }) {
 
   return (
     <Button variant="ghost" size="sm" disabled={pending} onClick={handleClick}>
-      {pending ? "…" : "Reabrir"}
+      <RotateCcw /> {pending ? "…" : "Reabrir"}
     </Button>
   );
 }

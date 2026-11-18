@@ -1,4 +1,15 @@
 import Link from "next/link";
+import {
+  ArrowDownLeft,
+  ArrowRight,
+  ArrowUpRight,
+  CalendarRange,
+  CreditCard,
+  PiggyBank,
+  Table2,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MedidorRitmo } from "@/components/medidor-ritmo";
 import { ValorEfetivo } from "@/components/valor-efetivo";
@@ -7,13 +18,25 @@ import { AlertasVencimento } from "@/components/alertas-vencimento";
 import { CardAcerto } from "@/components/card-acerto";
 import { VariacaoBadge } from "@/components/variacao-badge";
 import { SeletorPeriodo } from "@/components/seletor-periodo";
-import { DonutChart } from "@/components/charts/donut-chart";
+import { AcoesRapidas } from "@/components/acoes-rapidas";
+import { ParaOndeVai } from "@/components/para-onde-vai";
+import { CategoriaIcone } from "@/components/categoria-icone";
+import { getProfile } from "@/lib/auth";
+import { SEM_CATEGORIA } from "@/lib/categorias";
 import { competenciaAtualISO, diasDesde, formatDataCurta } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
 import { parsePeriodo } from "@/lib/periodo";
 import type { SearchParams } from "@/lib/search";
 import { um } from "@/lib/search";
+import { getDadosAcoes } from "@/server/acoes";
 import { getResumoMes } from "@/server/dashboard";
+
+function saudacao() {
+  const h = Number(
+    new Intl.DateTimeFormat("pt-BR", { hour: "numeric", hour12: false, timeZone: "America/Sao_Paulo" }).format(new Date()),
+  );
+  return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
+}
 
 export default async function DashboardPage({
   searchParams,
@@ -23,201 +46,266 @@ export default async function DashboardPage({
   const sp = await searchParams;
   // O dashboard é sempre mensal (teto e ritmo são por mês).
   const periodo = parsePeriodo({ mes: um(sp.mes) });
-  const resumo = await getResumoMes(periodo.competencia);
+  const [resumo, perfil, dados] = await Promise.all([
+    getResumoMes(periodo.competencia),
+    getProfile(),
+    getDadosAcoes(),
+  ]);
   const mesAtual = periodo.competencia === competenciaAtualISO();
   const { analise } = resumo;
+  const mesQuery = periodo.de.slice(0, 7);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <h1 className="font-display text-xl font-semibold capitalize text-foreground lg:text-2xl">
-          {periodo.label}
-        </h1>
-        <div className="lg:w-[360px]">
-          <SeletorPeriodo periodo={periodo} permitirIntervalo={false} />
+    <div className="flex flex-col gap-5">
+      {/* Hero */}
+      <section className="bg-hero relative -mx-4 -mt-6 overflow-hidden px-5 pb-6 pt-7 text-white sm:mx-0 sm:mt-0 sm:rounded-[28px] lg:p-8">
+        <div className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-white/10 blur-2xl" aria-hidden />
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
+          <div className="flex flex-1 flex-col gap-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm text-white/75">{saudacao()},</p>
+                <p className="font-display text-lg font-semibold">{perfil ?? "casal"} 👋</p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium capitalize ring-1 ring-white/20">
+                <CalendarRange className="size-3.5" /> {periodo.label}
+              </span>
+            </div>
+
+            <div>
+              <p className="text-sm text-white/80">
+                {mesAtual ? "Ainda podem gastar" : resumo.estourouTeto ? "Estourou o teto em" : "Sobrou do teto"}
+              </p>
+              <p className="mt-1 font-display text-[44px] font-semibold leading-none tabular sm:text-[52px]">
+                {formatCents(resumo.disponivelCents)}
+              </p>
+              <div className="mt-2 [&_span]:!text-white/85">
+                <VariacaoBadge valor={resumo.deltaGasto} sufixo="de gasto vs. mês anterior" />
+              </div>
+            </div>
+
+            <MedidorRitmo
+              pctTeto={resumo.ritmo.pctTeto}
+              pctMes={resumo.ritmo.pctMes}
+              diaAtual={resumo.diaAtual}
+              estourou={resumo.estourouTeto}
+              claro
+            />
+          </div>
+
+          <div className="flex flex-col gap-4 lg:w-[340px]">
+            <div className="grid grid-cols-3 gap-2">
+              <MiniStat icon={ArrowDownLeft} rotulo="Entrou" valor={analise.entradasCents} />
+              <MiniStat icon={ArrowUpRight} rotulo="Gastou" valor={analise.gastoCents} />
+              <MiniStat icon={PiggyBank} rotulo="Guardou" valor={analise.reservaCents} />
+            </div>
+            <AcoesRapidas dados={dados} />
+          </div>
         </div>
+      </section>
+
+      <div className="lg:max-w-md">
+        <SeletorPeriodo periodo={periodo} permitirIntervalo={false} />
       </div>
 
       {mesAtual && <AlertasVencimento alertas={resumo.alertas} />}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-      <div className="flex flex-col gap-6 lg:col-span-2">
-      <section className="rounded-xl border border-border bg-card p-5 lg:p-6">
-        <p className="text-sm text-muted-foreground">
-          {mesAtual ? "Ainda podem gastar" : resumo.estourouTeto ? "Estourou o teto em" : "Sobrou do teto"}
-        </p>
-        <p
-          className={`mt-1 font-display text-[52px] font-semibold leading-none tabular ${
-            resumo.estourouTeto ? "text-rosa" : "text-tinta"
-          }`}
-        >
-          {formatCents(resumo.disponivelCents)}
-        </p>
-        <div className="mt-2">
-          <VariacaoBadge valor={resumo.deltaGasto} sufixo="de gasto vs. mês anterior" />
-        </div>
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="flex flex-col gap-5 lg:col-span-2">
+          <Card>
+            <CardHeader className="flex-row items-center justify-between">
+              <div>
+                <CardTitle>Para onde vai o dinheiro</CardTitle>
+                <p className="mt-1 text-xs text-muted-foreground">Gastos, reserva e o que ficou livre sobre o que entrou.</p>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ParaOndeVai
+                entradasCents={analise.entradasCents}
+                reservaCents={analise.reservaCents}
+                categorias={analise.porCategoria}
+                hrefAnalise={`/fluxo?mes=${mesQuery}`}
+                hrefSemCategoria={`/saidas?mes=${mesQuery}&categoria=${encodeURIComponent(SEM_CATEGORIA)}`}
+              />
+            </CardContent>
+          </Card>
 
-        <div className="mt-5">
-          <MedidorRitmo
-            pctTeto={resumo.ritmo.pctTeto}
-            pctMes={resumo.ritmo.pctMes}
-            diaAtual={resumo.diaAtual}
-            estourou={resumo.estourouTeto}
-          />
-        </div>
-      </section>
+          <Card>
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="size-5 text-violeta" /> Faturas do mês
+              </CardTitle>
+              <Link href="/faturas" className="text-sm font-medium text-violeta hover:underline">
+                Ver todas
+              </Link>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              {resumo.faturas.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhum cartão ainda. Cadastre o primeiro para começar a acompanhar.
+                </p>
+              ) : (
+                <>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {resumo.faturas.map((f) => (
+                      <div key={f.card.id} className="flex items-center gap-3 rounded-2xl bg-muted/60 p-3">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violeta to-azul text-white">
+                          <CreditCard className="size-[18px]" />
+                        </span>
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate text-sm font-medium text-foreground">{f.card.nome}</span>
+                          <span className="text-xs text-muted-foreground">
+                            vence {formatDataCurta(f.vencimento)}
+                            {f.invoice?.status === "paga" && " · paga ✓"}
+                          </span>
+                        </span>
+                        <ValorEfetivo
+                          valorCents={f.valorCents}
+                          tipo={f.tipo}
+                          diasDesdeAtualizacao={
+                            f.invoice?.parcialAtualizadoEm ? diasDesde(f.invoice.parcialAtualizadoEm) : null
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <AtualizarParciaisSheet
+                    key={resumo.competencia}
+                    faturas={resumo.faturas}
+                    competencia={resumo.competencia}
+                  />
+                </>
+              )}
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardContent className="divide-y divide-border p-0">
-          <ResumoRow label="Entradas" valorCents={resumo.entradasCents} />
-          <ResumoRow label="Gasto no mês" valorCents={resumo.gastoCents} tipo={resumo.gastoTipo} />
-          <ResumoRow label="  ↳ cartões" valorCents={analise.gastoCartoesCents} sub />
-          <ResumoRow label="  ↳ saídas avulsas" valorCents={analise.gastoSaidasCents} sub />
-          <ResumoRow label="Teto do mês" valorCents={resumo.tetoCents} />
-          <ResumoRow
-            label="Sobra (entradas − gasto)"
-            valorCents={resumo.sobraCents}
-            cor={resumo.sobraCents < 0 ? "text-rosa" : "text-menta"}
-          />
-          <ResumoRow label="Reserva" valorCents={resumo.reservaAtualCents} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Faturas do mês</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          {resumo.faturas.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nenhum cartão ainda. Cadastre o primeiro para começar a acompanhar.
-            </p>
-          ) : (
-            <>
-              <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                {resumo.faturas.map((f) => (
-                  <div key={f.card.id} className="flex items-center justify-between gap-3">
-                    <span className="flex flex-col">
-                      <span className="text-sm font-medium text-foreground">{f.card.nome}</span>
+          <Card>
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle>Últimas saídas</CardTitle>
+              <Link href={`/saidas?mes=${mesQuery}`} className="text-sm font-medium text-violeta hover:underline">
+                Ver todas
+              </Link>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1">
+              {analise.ultimasSaidas.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhuma saída neste mês.</p>
+              ) : (
+                analise.ultimasSaidas.map((s) => (
+                  <div key={s.id} className="flex items-center gap-3 rounded-xl py-2">
+                    <CategoriaIcone nome={s.categoria} />
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-sm font-medium text-foreground">{s.descricao}</span>
                       <span className="text-xs text-muted-foreground">
-                        vence {formatDataCurta(f.vencimento)}
-                        {f.invoice?.status === "paga" && " · paga"}
+                        {formatDataCurta(s.data)}
+                        {s.categoria ? ` · ${s.categoria}` : ""}
+                        {s.id < 0 ? " · previsto" : ""}
                       </span>
                     </span>
-                    <ValorEfetivo
-                      valorCents={f.valorCents}
-                      tipo={f.tipo}
-                      diasDesdeAtualizacao={
-                        f.invoice?.parcialAtualizadoEm ? diasDesde(f.invoice.parcialAtualizadoEm) : null
-                      }
-                    />
+                    <span className="font-mono text-sm font-medium tabular text-rosa">−{formatCents(s.valorCents)}</span>
                   </div>
-                ))}
-              </div>
-              <AtualizarParciaisSheet
-                key={resumo.competencia}
-                faturas={resumo.faturas}
-                competencia={resumo.competencia}
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <Card>
+            <CardHeader>
+              <CardTitle>Resumo do mês</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1 p-2 pt-0">
+              <ResumoRow icon={ArrowDownLeft} cor="#0ea88c" label="Entradas" valorCents={resumo.entradasCents} />
+              <ResumoRow icon={CreditCard} cor="#6c4cf0" label="Cartões" valorCents={analise.gastoCartoesCents} tipo={resumo.gastoTipo} />
+              <ResumoRow icon={ArrowUpRight} cor="#2e6be6" label="Saídas avulsas" valorCents={analise.gastoSaidasCents} />
+              <ResumoRow icon={PiggyBank} cor="#10b981" label="Guardado na reserva" valorCents={analise.reservaCents} />
+              <div className="mx-3 my-1 border-t border-dashed border-border" />
+              <ResumoRow
+                icon={Wallet}
+                cor={analise.livreCents < 0 ? "#e2496b" : "#0ea88c"}
+                label={analise.livreCents < 0 ? "Faltou" : "Livre no mês"}
+                valorCents={analise.livreCents}
+                destaque
               />
-            </>
-          )}
-        </CardContent>
-      </Card>
-      </div>
+              <p className="px-3 pb-2 text-[11px] text-muted-foreground">
+                Teto {formatCents(resumo.tetoCents)} · Reserva total {formatCents(resumo.reservaAtualCents)}
+              </p>
+            </CardContent>
+          </Card>
 
-      <div className="flex flex-col gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Para onde foi o dinheiro</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DonutChart
-            fatias={analise.porCategoria}
-            centro={{ titulo: "Total", valor: formatCents(analise.gastoCents) }}
-          />
-          <Link href={`/analises?mes=${periodo.de.slice(0, 7)}`} className="mt-4 inline-block text-sm font-medium text-violeta hover:underline">
-            Ver análise completa →
-          </Link>
-        </CardContent>
-      </Card>
-
-      <CardAcerto acerto={analise.acerto} usuarios={analise.usuarios} />
-
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <CardTitle>Saídas do mês</CardTitle>
-          <Link href={`/saidas?mes=${periodo.de.slice(0, 7)}`} className="text-sm font-medium text-violeta hover:underline">
-            Ver todas
-          </Link>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2.5">
-          {analise.ultimasSaidas.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma saída neste mês.</p>
-          ) : (
-            analise.ultimasSaidas.map((s) => (
-              <div key={s.id} className="flex items-center justify-between gap-3 text-sm">
-                <span className="flex min-w-0 flex-col">
-                  <span className="truncate text-foreground">{s.descricao}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDataCurta(s.data)}
-                    {s.categoria ? ` · ${s.categoria}` : ""}
-                    {s.id < 0 ? " · previsão recorrente" : ""}
-                  </span>
-                </span>
-                <span className="font-mono tabular text-tinta">{formatCents(s.valorCents)}</span>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Comprometido à frente</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between gap-2 text-sm">
-            {resumo.comprometidoProximosMeses.map((m) => (
-              <Link
-                key={m.competencia}
-                href="/projecao"
-                className="flex flex-col items-center gap-1 rounded-lg px-2 py-1 transition-colors hover:bg-accent"
-              >
-                <span className="capitalize text-muted-foreground">{m.label}</span>
-                <span className="font-mono tabular text-bruma">~{formatCents(m.valorCents)}</span>
+          <Card>
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle>Próximos meses</CardTitle>
+              <Link href="/planilha" className="inline-flex items-center gap-1 text-sm font-medium text-violeta hover:underline">
+                <Table2 className="size-4" /> Planilha
               </Link>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-      </div>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2">
+              {resumo.comprometidoProximosMeses.map((m) => {
+                const pct = resumo.entradasCents > 0 ? Math.min(1, m.valorCents / resumo.entradasCents) : 0;
+                return (
+                  <div key={m.competencia} className="flex items-center gap-3 text-sm">
+                    <span className="w-10 capitalize text-muted-foreground">{m.label}</span>
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-violeta" style={{ width: `${pct * 100}%` }} />
+                    </div>
+                    <span className="w-24 text-right font-mono tabular text-bruma">{formatCents(m.valorCents)}</span>
+                  </div>
+                );
+              })}
+              <p className="text-xs text-muted-foreground">Parcelas de cartão já comprometidas.</p>
+              <Link
+                href="/planilha"
+                className="mt-1 flex items-center justify-between rounded-2xl bg-violeta/10 p-3 text-sm font-medium text-violeta transition-colors hover:bg-violeta/15"
+              >
+                Ver se vai sobrar ou faltar <ArrowRight className="size-4" />
+              </Link>
+            </CardContent>
+          </Card>
+
+          <CardAcerto acerto={analise.acerto} usuarios={analise.usuarios} />
+        </div>
       </div>
     </div>
   );
 }
 
+function MiniStat({ icon: Icon, rotulo, valor }: { icon: LucideIcon; rotulo: string; valor: number }) {
+  return (
+    <div className="rounded-2xl bg-white/12 p-2.5 ring-1 ring-white/15 backdrop-blur">
+      <span className="flex items-center gap-1 text-[11px] text-white/75">
+        <Icon className="size-3.5" /> {rotulo}
+      </span>
+      <span className="mt-0.5 block truncate font-mono text-[13px] font-semibold tabular">{formatCents(valor)}</span>
+    </div>
+  );
+}
+
 function ResumoRow({
+  icon: Icon,
+  cor,
   label,
   valorCents,
   tipo,
-  sub,
-  cor,
+  destaque,
 }: {
+  icon: LucideIcon;
+  cor: string;
   label: string;
   valorCents: number;
   tipo?: "real" | "parcial" | "estimado";
-  sub?: boolean;
-  cor?: string;
+  destaque?: boolean;
 }) {
   return (
-    <div className={`flex items-center justify-between px-5 ${sub ? "py-1.5" : "py-3"}`}>
-      <span className={`whitespace-pre text-sm ${sub ? "text-xs text-muted-foreground" : "text-muted-foreground"}`}>
-        {label}
+    <div className="flex items-center gap-3 rounded-xl px-3 py-2">
+      <span className="flex size-8 items-center justify-center rounded-full" style={{ background: `${cor}1f`, color: cor }}>
+        <Icon className="size-4" />
       </span>
+      <span className={`flex-1 text-sm ${destaque ? "font-semibold text-foreground" : "text-muted-foreground"}`}>{label}</span>
       {tipo ? (
         <ValorEfetivo valorCents={valorCents} tipo={tipo} />
       ) : (
-        <span className={`font-mono tabular ${sub ? "text-sm text-bruma" : (cor ?? "text-tinta")}`}>
+        <span className={`font-mono tabular ${destaque ? "font-semibold" : ""}`} style={destaque ? { color: cor } : undefined}>
           {formatCents(valorCents)}
         </span>
       )}

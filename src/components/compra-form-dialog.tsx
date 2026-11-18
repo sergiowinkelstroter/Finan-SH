@@ -46,15 +46,24 @@ export function CompraFormDialog({
   usuarios,
   compra,
   trigger,
+  open: openControlado,
+  onOpenChange,
   categorias = [],
 }: {
   cartoes: Cartao[];
   usuarios: Usuario[];
   compra?: CompraExistente;
-  trigger?: React.ReactNode;
+  trigger?: React.ReactNode | null;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
   categorias?: string[];
 }) {
-  const [open, setOpen] = useState(false);
+  const [openInterno, setOpenInterno] = useState(false);
+  const open = openControlado ?? openInterno;
+  const setOpen = (v: boolean) => {
+    setOpenInterno(v);
+    onOpenChange?.(v);
+  };
   const [pending, startTransition] = useTransition();
 
   const [cardId, setCardId] = useState(
@@ -116,6 +125,7 @@ export function CompraFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+      {trigger !== null && (
       <DialogTrigger asChild>
         {trigger ?? (
           <Button>
@@ -123,6 +133,7 @@ export function CompraFormDialog({
           </Button>
         )}
       </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{compra ? "Editar compra" : "Compra parcelada"}</DialogTitle>

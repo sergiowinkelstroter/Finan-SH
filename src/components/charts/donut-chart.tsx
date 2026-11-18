@@ -31,29 +31,30 @@ export function DonutChart({
       <div className="relative size-48">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie data={fatias} dataKey="cents" nameKey="nome" innerRadius="62%" outerRadius="100%" paddingAngle={1.5} stroke="none" startAngle={90} endAngle={-270}>
+            <Pie data={fatias} dataKey="cents" nameKey="nome" innerRadius="68%" outerRadius="100%" paddingAngle={2} cornerRadius={6} stroke="none" startAngle={90} endAngle={-270}>
               {fatias.map((f) => (
                 <Cell key={f.nome} fill={f.cor} />
               ))}
             </Pie>
             <Tooltip
               formatter={(v) => `${formatCents(Number(v))} (${formatPercentual(Number(v) / total)})`}
-              contentStyle={{ borderRadius: 10, border: "1px solid #e7e4f8", fontSize: 12 }}
+              contentStyle={{ borderRadius: 14, border: "none", boxShadow: "0 8px 24px -6px rgb(26 24 48 / 0.18)", fontSize: 12, padding: "8px 12px" }}
+            labelStyle={{ fontWeight: 600, color: "#1a1830", marginBottom: 2, textTransform: "capitalize" }}
             />
           </PieChart>
         </ResponsiveContainer>
         {centro && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-[11px] text-muted-foreground">{centro.titulo}</span>
-            <span className="font-mono text-sm font-semibold tabular text-tinta">{centro.valor}</span>
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{centro.titulo}</span>
+            <span className="font-mono text-base font-semibold tabular text-tinta">{centro.valor}</span>
           </div>
         )}
       </div>
-      <ul className="flex w-full flex-col gap-1.5 text-sm">
+      <ul className="flex w-full flex-col gap-2 text-sm">
         {visiveis.map((f) => (
           <li key={f.nome} className="flex items-center justify-between gap-2">
             <span className="inline-flex min-w-0 items-center gap-2">
-              <span className="size-2.5 shrink-0 rounded-sm" style={{ background: f.cor }} />
+              <span className="size-2.5 shrink-0 rounded-full" style={{ background: f.cor }} />
               <span className="truncate text-foreground">{f.nome}</span>
             </span>
             <span className="shrink-0 font-mono text-xs tabular text-muted-foreground">

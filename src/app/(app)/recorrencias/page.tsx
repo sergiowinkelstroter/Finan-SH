@@ -1,10 +1,10 @@
-import { Repeat } from "lucide-react";
+import { CalendarDays, Pencil, Repeat, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { CategoriaIcone } from "@/components/categoria-icone";
+import { EmptyState, ListCard, ListItem, PageHeader, SectionLabel, StatCard } from "@/components/ds";
 import { RecorrenciaControles } from "@/components/recorrencia-controles";
 import { RecorrenciaFormDialog } from "@/components/recorrencia-form-dialog";
-import { corCategoria } from "@/lib/categorias";
 import { formatDataCurta } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
 import { categoriasDeSaidas } from "@/server/saidas";
@@ -14,82 +14,87 @@ import { listarUsuarios } from "@/server/usuarios";
 export default async function RecorrenciasPage() {
   const [lista, usuarios, usadas] = await Promise.all([listarRecorrencias(), listarUsuarios(), categoriasDeSaidas()]);
   const ativas = lista.filter((r) => r.ativo);
+  const pausadas = lista.filter((r) => !r.ativo);
   const totalMensal = ativas.reduce((s, r) => s + r.valorCents, 0);
+
+  const linha = (r: (typeof lista)[number]) => (
+    <ListItem
+      key={r.id}
+      muted={!r.ativo}
+      leading={<CategoriaIcone nome={r.categoria} />}
+      titulo={r.descricao}
+      subtitulo={
+        <>
+          <span className="inline-flex items-center gap-1">
+            <CalendarDays className="size-3" /> dia {r.diaMes}
+          </span>
+          <span>· desde {formatDataCurta(r.inicio)}</span>
+          {r.fim && <span>até {formatDataCurta(r.fim)}</span>}
+          {r.categoria && <span>· {r.categoria}</span>}
+          {r.pagador && <span>· {r.pagador.nome}</span>}
+          {!r.ativo && <Badge variant="muted">pausada</Badge>}
+          {!r.compartilhada && <Badge variant="outline">individual</Badge>}
+        </>
+      }
+      trailing={
+        <>
+          <span className="font-mono text-sm font-semibold tabular text-tinta">{formatCents(r.valorCents)}</span>
+          <span className="text-[11px] text-muted-foreground">por mês</span>
+        </>
+      }
+      acoes={
+        <>
+          <RecorrenciaFormDialog
+            usuarios={usuarios}
+            categorias={usadas}
+            recorrencia={r}
+            trigger={
+              <Button type="button" variant="ghost" size="sm" aria-label="Editar">
+                <Pencil />
+              </Button>
+            }
+          />
+          <RecorrenciaControles id={r.id} ativo={r.ativo} descricao={r.descricao} />
+        </>
+      }
+    />
+  );
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-xl font-semibold text-foreground lg:text-2xl">Recorrências</h1>
-          <p className="text-sm text-muted-foreground">
-            Contas fixas lançadas sozinhas todo mês em Saídas.
-          </p>
-        </div>
-        <RecorrenciaFormDialog usuarios={usuarios} categorias={usadas} />
+      <PageHeader
+        icon={Repeat}
+        titulo="Recorrências"
+        subtitulo="Contas fixas lançadas sozinhas todo mês em Saídas."
+        acoes={<RecorrenciaFormDialog usuarios={usuarios} categorias={usadas} />}
+      />
+
+      <div className="grid grid-cols-2 gap-3 lg:max-w-xl">
+        <StatCard icon={Repeat} titulo="Ativas" valor={String(ativas.length)} detalhe={pausadas.length ? `${pausadas.length} pausada(s)` : undefined} />
+        <StatCard icon={Wallet} cor="#e2496b" titulo="Total por mês" valor={formatCents(totalMensal)} />
       </div>
 
-      <Card>
-        <CardContent className="grid grid-cols-2 gap-3 p-4 text-center">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs text-muted-foreground">Ativas</span>
-            <span className="font-mono text-base font-semibold tabular">{ativas.length}</span>
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs text-muted-foreground">Total por mês</span>
-            <span className="font-mono text-base font-semibold tabular">{formatCents(totalMensal)}</span>
-          </div>
-        </CardContent>
-      </Card>
-
       {lista.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Nenhuma recorrência ainda. Cadastre aluguel, condomínio, internet, assinaturas…
-        </p>
+        <EmptyState
+          icon={Repeat}
+          titulo="Nenhuma recorrência ainda"
+          descricao="Cadastre aluguel, condomínio, internet, assinaturas… e elas entram em Saídas todo mês."
+          acao={<RecorrenciaFormDialog usuarios={usuarios} categorias={usadas} />}
+        />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {lista.map((r) => (
-            <Card key={r.id} className={r.ativo ? undefined : "opacity-60"}>
-              <CardContent className="flex flex-col gap-3 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 flex-col gap-1">
-                    <span className="flex items-center gap-2 font-medium text-foreground">
-                      <Repeat className="size-4 shrink-0 text-violeta" />
-                      <span className="truncate">{r.descricao}</span>
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      todo dia {r.diaMes} · desde {formatDataCurta(r.inicio)}
-                      {r.fim ? ` até ${formatDataCurta(r.fim)}` : ""}
-                      {r.pagador ? ` · ${r.pagador.nome}` : ""}
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {r.categoria && (
-                        <Badge variant="muted">
-                          <span className="mr-1 size-1.5 rounded-full" style={{ background: corCategoria(r.categoria) }} />
-                          {r.categoria}
-                        </Badge>
-                      )}
-                      {!r.ativo && <Badge variant="muted">pausada</Badge>}
-                      {!r.compartilhada && <Badge variant="outline">individual</Badge>}
-                    </div>
-                  </div>
-                  <span className="shrink-0 font-mono tabular text-tinta">{formatCents(r.valorCents)}</span>
-                </div>
-                <div className="flex justify-end gap-1">
-                  <RecorrenciaFormDialog
-                    usuarios={usuarios}
-                    categorias={usadas}
-                    recorrencia={r}
-                    trigger={
-                      <Button type="button" variant="ghost" size="sm">
-                        Editar
-                      </Button>
-                    }
-                  />
-                  <RecorrenciaControles id={r.id} ativo={r.ativo} descricao={r.descricao} />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
+          {ativas.length > 0 && (
+            <section className="flex flex-col gap-2">
+              <SectionLabel extra={formatCents(totalMensal)}>Ativas</SectionLabel>
+              <ListCard>{ativas.map(linha)}</ListCard>
+            </section>
+          )}
+          {pausadas.length > 0 && (
+            <section className="flex flex-col gap-2">
+              <SectionLabel>Pausadas</SectionLabel>
+              <ListCard>{pausadas.map(linha)}</ListCard>
+            </section>
+          )}
         </div>
       )}
     </div>

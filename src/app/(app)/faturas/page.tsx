@@ -1,7 +1,7 @@
 import { AtualizarParciaisSheet } from "@/components/atualizar-parciais-sheet";
 import { FaturaRow } from "@/components/fatura-row";
 import { SeletorPeriodo } from "@/components/seletor-periodo";
-import { Card, CardContent } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { formatCents } from "@/lib/money";
 import { parsePeriodo } from "@/lib/periodo";
 import { escolha, um, type SearchParams } from "@/lib/search";
@@ -11,6 +11,10 @@ import { DonutChart } from "@/components/charts/donut-chart";
 import { Card as CardBase, CardHeader, CardTitle } from "@/components/ui/card";
 import { addMesesCompetencia, competenciaLabelCurta } from "@/lib/dates";
 import { FiltroLista } from "@/components/filtro-lista";
+import { CheckCircle2, CreditCard, Hourglass, Receipt } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { EmptyState, PageHeader, SectionLabel, StatCard } from "@/components/ds";
 
 const PALETA_CARTOES = ["#6c4cf0", "#2e6be6", "#0ea88c", "#e2496b", "#f59e0b", "#06b6d4", "#8b5cf6", "#64748b"];
 
@@ -33,25 +37,77 @@ export default async function FaturasPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="font-display text-xl font-semibold text-foreground lg:text-2xl">Faturas</h1>
+      <PageHeader icon={CreditCard} titulo="Faturas" subtitulo="Acompanhe, feche e pague as faturas de cada cartão." />
 
-      <div className="max-w-md">
-        <SeletorPeriodo periodo={periodo} permitirIntervalo={false} />
-      </div>
-
-      {todas.length > 0 && (
+      {todas.length === 0 ? (
         <>
-          <Card>
-            <CardContent className="grid grid-cols-3 gap-3 p-4 text-center">
-              <Stat rotulo="Total do mês" valor={formatCents(total)} />
-              <Stat rotulo="Já pago" valor={formatCents(pagas)} cor="text-menta" />
-              <Stat rotulo="A pagar" valor={formatCents(total - pagas)} cor={total - pagas > 0 ? "text-rosa" : undefined} />
-            </CardContent>
-          </Card>
-          <div className="grid gap-6 lg:grid-cols-5">
-            <CardBase className="lg:col-span-3">
+          <div className="lg:max-w-md">
+            <SeletorPeriodo periodo={periodo} permitirIntervalo={false} />
+          </div>
+          <EmptyState
+            icon={CreditCard}
+            titulo="Nenhum cartão ainda"
+            descricao="Cadastre o primeiro cartão para começar a acompanhar as faturas."
+            acao={
+              <Button asChild>
+                <Link href="/cartoes">Cadastrar cartão</Link>
+              </Button>
+            }
+          />
+        </>
+      ) : (
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+          <aside className="flex flex-col gap-4 lg:sticky lg:top-6 lg:order-2">
+            <SeletorPeriodo periodo={periodo} permitirIntervalo={false} />
+            <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
+              <StatCard icon={Receipt} cor="#6c4cf0" titulo="Total do mês" valor={formatCents(total)} className="p-3 lg:p-4" />
+              <StatCard icon={CheckCircle2} cor="#0ea88c" titulo="Já pago" valor={formatCents(pagas)} tom="positivo" className="p-3 lg:p-4" />
+              <StatCard
+                icon={Hourglass}
+                cor="#e2496b"
+                titulo="A pagar"
+                valor={formatCents(total - pagas)}
+                tom={total - pagas > 0 ? "negativo" : "neutro"}
+                className="p-3 lg:p-4"
+              />
+            </div>
+            <AtualizarParciaisSheet key={competencia} faturas={todas} competencia={competencia} />
+            <FiltroLista
+              campos={[
+                {
+                  tipo: "select",
+                  chave: "status",
+                  label: "Situação",
+                  opcoes: [
+                    { valor: "aberta", label: "Abertas" },
+                    { valor: "fechada", label: "Fechadas" },
+                    { valor: "paga", label: "Pagas" },
+                  ],
+                },
+              ]}
+            />
+          </aside>
+
+          <div className="flex flex-col gap-5 lg:order-1">
+            <section className="flex flex-col gap-2">
+              <SectionLabel extra={`${faturas.length} de ${todas.length}`}>Cartões</SectionLabel>
+              {faturas.length === 0 ? (
+                <EmptyState icon={Receipt} titulo="Nenhuma fatura com essa situação" />
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {faturas.map((f) => (
+                    <FaturaRow key={`${f.card.id}-${competencia}`} fatura={f} competencia={competencia} />
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <CardBase>
               <CardHeader>
                 <CardTitle>Faturas por mês</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Meses futuros mostram só as parcelas já cadastradas (estimado).
+                </p>
               </CardHeader>
               <CardContent>
                 <BarChart
@@ -62,12 +118,9 @@ export default async function FaturasPage({ searchParams }: { searchParams: Prom
                     destaque: c === competencia,
                   }))}
                 />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Meses futuros mostram só as parcelas já cadastradas (estimado).
-                </p>
               </CardContent>
             </CardBase>
-            <CardBase className="lg:col-span-2">
+            <CardBase>
               <CardHeader>
                 <CardTitle>Divisão do mês por cartão</CardTitle>
               </CardHeader>
@@ -82,50 +135,8 @@ export default async function FaturasPage({ searchParams }: { searchParams: Prom
               </CardContent>
             </CardBase>
           </div>
-          <FiltroLista
-            campos={[
-              {
-                tipo: "select",
-                chave: "status",
-                label: "Situação",
-                opcoes: [
-                  { valor: "aberta", label: "Abertas" },
-                  { valor: "fechada", label: "Fechadas" },
-                  { valor: "paga", label: "Pagas" },
-                ],
-              },
-            ]}
-          />
-        </>
+        </div>
       )}
-
-      {todas.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Nenhum cartão ainda. Cadastre o primeiro em Cartões para começar a acompanhar.
-        </p>
-      ) : (
-        <>
-          <AtualizarParciaisSheet key={competencia} faturas={todas} competencia={competencia} />
-          {faturas.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma fatura com essa situação.</p>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {faturas.map((f) => (
-                <FaturaRow key={`${f.card.id}-${competencia}`} fatura={f} competencia={competencia} />
-              ))}
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
-function Stat({ rotulo, valor, cor }: { rotulo: string; valor: string; cor?: string }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-xs text-muted-foreground">{rotulo}</span>
-      <span className={`font-mono text-sm font-semibold tabular ${cor ?? "text-tinta"}`}>{valor}</span>
     </div>
   );
 }

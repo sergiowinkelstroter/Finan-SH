@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { toast } from "sonner";
+import { Archive, ArchiveRestore } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { arquivarCartao, reativarCartao } from "@/server/cartoes-actions";
 
@@ -32,6 +33,7 @@ export function CartaoArquivarButton({
 
   return (
     <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={handleClick}>
+      {ativo ? <Archive /> : <ArchiveRestore />}
       {pending ? "…" : ativo ? "Arquivar" : "Reativar"}
     </Button>
   );

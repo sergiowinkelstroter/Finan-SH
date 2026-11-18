@@ -10,6 +10,8 @@ import {
   TrendingUp,
   Wallet,
   FolderCog,
+  Table2,
+  Workflow,
   type LucideIcon,
 } from "lucide-react";
 
@@ -24,7 +26,14 @@ export const GRUPOS_NAV: { titulo: string; itens: ItemNav[] }[] = [
     titulo: "Visão geral",
     itens: [
       { href: "/", label: "Início", icon: Home },
+      { href: "/fluxo", label: "Para onde vai", icon: Workflow },
       { href: "/analises", label: "Análises", icon: BarChart3 },
+    ],
+  },
+  {
+    titulo: "Futuro",
+    itens: [
+      { href: "/planilha", label: "Planilha do futuro", icon: Table2 },
       { href: "/projecao", label: "Projeção", icon: LineChart },
     ],
   },
@@ -49,7 +58,14 @@ export const GRUPOS_NAV: { titulo: string; itens: ItemNav[] }[] = [
 ];
 
 /** Abas fixas do celular; o resto vai em "Mais". */
-export const ABAS_MOBILE = ["/", "/faturas", "/parcelas", "/saidas"];
+export const ABAS_MOBILE = ["/", "/saidas", "/planilha"];
+
+/** Rótulos curtos para a barra inferior do celular. */
+export const ROTULO_CURTO: Record<string, string> = {
+  "/": "Início",
+  "/saidas": "Saídas",
+  "/planilha": "Futuro",
+};
 
 export const TODOS_ITENS = GRUPOS_NAV.flatMap((g) => g.itens);
 

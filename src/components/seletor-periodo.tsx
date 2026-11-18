@@ -46,9 +46,9 @@ export function SeletorPeriodo({
   const eMesAtual = periodo.modo === "mes" && periodo.competencia === hoje.competencia;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3">
+    <div className="flex flex-col gap-3 rounded-[var(--radius-card)] border border-border/70 bg-card p-2.5 shadow-card">
       {permitirIntervalo && (
-        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1 text-sm font-medium">
+        <div className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1 text-sm font-medium">
           {(["mes", "intervalo"] as const).map((modo) => (
             <button
               key={modo}
@@ -63,7 +63,7 @@ export function SeletorPeriodo({
                     )
               }
               className={cn(
-                "rounded-md py-1.5 transition-colors",
+                "rounded-full py-1.5 transition-colors",
                 periodo.modo === modo
                   ? "bg-card text-violeta shadow-sm"
                   : "text-muted-foreground hover:text-foreground",
@@ -84,13 +84,13 @@ export function SeletorPeriodo({
               aria-label="Escolher mês"
               value={periodo.de.slice(0, 7)}
               onChange={(e) => e.target.value && ir(periodoDoMes(parseISO(`${e.target.value}-01`)))}
-              className="h-9 rounded-md border border-transparent bg-transparent px-2 text-center font-display text-base font-semibold capitalize text-foreground hover:border-border focus:border-border"
+              className="h-10 rounded-xl border border-transparent bg-transparent px-2 text-center font-display text-base font-semibold capitalize text-foreground hover:border-border focus:border-border"
             />
             {!eMesAtual && (
               <button
                 type="button"
                 onClick={() => ir(hoje)}
-                className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-violeta hover:bg-accent"
+                className="rounded-full bg-violeta/10 px-2.5 py-1 text-xs font-semibold text-violeta hover:bg-violeta/15"
               >
                 Hoje
               </button>
@@ -122,7 +122,7 @@ export function SeletorPeriodo({
                 key={p.id}
                 type="button"
                 onClick={() => ir(presetPeriodo(p.id))}
-                className="rounded-full border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-violeta/10 hover:text-violeta"
               >
                 {p.label}
               </button>
@@ -141,7 +141,7 @@ function BotaoSeta({ direcao, onClick }: { direcao: "anterior" | "proximo"; onCl
       type="button"
       onClick={onClick}
       aria-label={direcao === "anterior" ? "Período anterior" : "Próximo período"}
-      className="flex size-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent"
+      className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-violeta/10 hover:text-violeta"
     >
       <Icon className="size-4" />
     </button>
@@ -156,7 +156,7 @@ function CampoData({ label, value, onChange }: { label: string; value: string; o
         type="date"
         value={value}
         onChange={(e) => e.target.value && onChange(e.target.value)}
-        className="h-9 w-full min-w-0 rounded-md border border-input bg-card px-2 text-sm text-foreground"
+        className="h-10 w-full min-w-0 rounded-xl border border-input bg-card px-2.5 text-sm text-foreground"
       />
     </label>
   );

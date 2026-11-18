@@ -20,12 +20,14 @@ export async function registrarAporte(input: AporteInput) {
     descricao: data.descricao || null,
   });
   revalidatePath("/reserva");
+  revalidatePath("/saidas");
   revalidatePath("/");
 }
 
 export async function excluirAporte(id: number) {
   await db.delete(savingsEntries).where(eq(savingsEntries.id, id));
   revalidatePath("/reserva");
+  revalidatePath("/saidas");
   revalidatePath("/");
 }
 
@@ -38,6 +40,18 @@ export async function definirMetaReserva(input: MetaReservaInput) {
       .onConflictDoUpdate({ target: settings.chave, set: { valor } });
   await grava("meta_reserva_cents", String(data.metaCents));
   await grava("meta_reserva_prazo", data.metaCents > 0 ? (data.prazo ?? "") : "");
+  revalidatePath("/reserva");
+  revalidatePath("/");
+}
+
+export async function definirAportePlanejado(valorCents: number) {
+  const v = Math.max(0, Math.round(Number(valorCents) || 0));
+  await db
+    .insert(settings)
+    .values({ chave: "aporte_planejado_cents", valor: String(v) })
+    .onConflictDoUpdate({ target: settings.chave, set: { valor: String(v) } });
+  revalidatePath("/projecao");
+  revalidatePath("/planilha");
   revalidatePath("/reserva");
   revalidatePath("/");
 }

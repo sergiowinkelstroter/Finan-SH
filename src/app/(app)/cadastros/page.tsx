@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Repeat, TrendingUp, Users, Wallet } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { ChevronRight, FolderCog, Repeat, TrendingUp, Users, Wallet } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { CartaoFormDialog } from "@/components/cartao-form-dialog";
 import { EntradaFormDialog } from "@/components/entrada-form-dialog";
 import { RecorrenciaFormDialog } from "@/components/recorrencia-form-dialog";
+import { IconBubble, PageHeader, SectionLabel } from "@/components/ds";
 import { listarCartoes } from "@/server/cartoes";
 import { listarEntradas } from "@/server/entradas";
 import { listarRecorrencias } from "@/server/recorrencias";
@@ -25,7 +26,9 @@ export default async function CadastrosPage() {
       descricao: "Fechamento, vencimento e limite de cada cartão.",
       href: "/cartoes",
       icon: Wallet,
+      cor: "#6c4cf0",
       qtd: cartoes.filter((c) => c.ativo).length,
+      rotuloQtd: "ativos",
       novo: <CartaoFormDialog usuarios={usuarios} />,
     },
     {
@@ -33,7 +36,9 @@ export default async function CadastrosPage() {
       descricao: "Salários fixos (com vigência) e entradas extras.",
       href: "/entradas",
       icon: TrendingUp,
+      cor: "#0ea88c",
       qtd: entradas.length,
+      rotuloQtd: "cadastradas",
       novo: <EntradaFormDialog usuarios={usuarios} />,
     },
     {
@@ -41,66 +46,68 @@ export default async function CadastrosPage() {
       descricao: "Aluguel, internet, assinaturas — lançadas todo mês.",
       href: "/recorrencias",
       icon: Repeat,
+      cor: "#2e6be6",
       qtd: recorrencias.filter((r) => r.ativo).length,
+      rotuloQtd: "ativas",
       novo: <RecorrenciaFormDialog usuarios={usuarios} categorias={usadas} />,
     },
   ];
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-display text-xl font-semibold text-foreground lg:text-2xl">Cadastros</h1>
-        <p className="text-sm text-muted-foreground">Tudo que alimenta o resto do app, num lugar só.</p>
-      </div>
+      <PageHeader icon={FolderCog} titulo="Cadastros" subtitulo="Tudo que alimenta o resto do app, num lugar só." />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {blocos.map((b) => {
-          const Icon = b.icon;
-          return (
-            <Card key={b.href}>
-              <CardContent className="flex h-full flex-col gap-4 p-5">
-                <Link href={b.href} className="flex items-start gap-3">
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-violeta">
-                    <Icon className="size-5" />
-                  </span>
-                  <span className="flex flex-col">
-                    <span className="font-display text-base font-semibold text-foreground">
-                      {b.titulo} <span className="font-sans text-sm font-normal text-muted-foreground">· {b.qtd}</span>
-                    </span>
-                    <span className="text-sm text-muted-foreground">{b.descricao}</span>
-                  </span>
-                </Link>
-                <div className="mt-auto flex gap-2">{b.novo}</div>
-              </CardContent>
-            </Card>
-          );
-        })}
-
-        <Card>
-          <CardContent className="flex flex-col gap-3 p-5">
-            <div className="flex items-start gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-violeta">
-                <Users className="size-5" />
+        {blocos.map((b) => (
+          <Card key={b.href} className="flex flex-col gap-4 p-5">
+            <Link href={b.href} className="group flex items-start gap-3">
+              <IconBubble icon={b.icon} cor={b.cor} size="lg" shape="square" />
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="flex items-center gap-1 font-display text-base font-semibold text-foreground">
+                  {b.titulo}
+                  <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                </span>
+                <span className="text-sm text-muted-foreground">{b.descricao}</span>
               </span>
-              <span className="flex flex-col">
-                <span className="font-display text-base font-semibold text-foreground">Pessoas</span>
-                <span className="text-sm text-muted-foreground">Usadas em &quot;pago por&quot;, titular e acerto.</span>
+            </Link>
+            <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/60 pt-4">
+              <span className="text-sm text-muted-foreground">
+                <span className="font-mono text-lg font-semibold tabular text-foreground">{b.qtd}</span> {b.rotuloQtd}
               </span>
+              {b.novo}
             </div>
-            <ul className="flex flex-wrap gap-2">
-              {usuarios.map((u) => (
-                <li
-                  key={u.id}
-                  className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-sm"
-                >
-                  <span className="size-2.5 rounded-full" style={{ background: u.cor ?? "#6c4cf0" }} />
-                  {u.nome}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+          </Card>
+        ))}
       </div>
+
+      <section className="flex flex-col gap-3">
+        <SectionLabel>Pessoas</SectionLabel>
+        <Card className="flex flex-col gap-4 p-5">
+          <div className="flex items-start gap-3">
+            <IconBubble icon={Users} cor="#f59e0b" size="lg" shape="square" />
+            <span className="flex flex-col">
+              <span className="font-display text-base font-semibold text-foreground">Quem usa o app</span>
+              <span className="text-sm text-muted-foreground">Usadas em &quot;pago por&quot;, titular do cartão e acerto.</span>
+            </span>
+          </div>
+          <ul className="flex flex-wrap gap-3">
+            {usuarios.map((u) => {
+              const cor = u.cor ?? "#6c4cf0";
+              return (
+                <li key={u.id} className="flex items-center gap-2.5 rounded-2xl bg-muted/60 py-2 pl-2 pr-4">
+                  <span
+                    className="flex size-9 items-center justify-center rounded-full font-display text-sm font-semibold text-white"
+                    style={{ background: cor }}
+                  >
+                    {u.nome.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="text-sm font-medium text-foreground">{u.nome}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      </section>
     </div>
   );
 }

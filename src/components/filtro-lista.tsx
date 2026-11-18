@@ -11,7 +11,7 @@ export type CampoFiltro =
   | { tipo: "valor"; chave: string; label: string };
 
 const classeCampo =
-  "h-9 w-full min-w-0 rounded-md border border-input bg-card px-2.5 text-sm text-foreground placeholder:text-muted-foreground";
+  "h-10 w-full min-w-0 rounded-xl border border-input bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground";
 
 /** Filtros de lista guardados na URL (busca com debounce, selects e faixa de valor). */
 export function FiltroLista({ campos }: { campos: CampoFiltro[] }) {
@@ -47,7 +47,7 @@ export function FiltroLista({ campos }: { campos: CampoFiltro[] }) {
     <div className="flex flex-col gap-2">
       {busca && (
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="search"
             value={texto}
@@ -57,7 +57,7 @@ export function FiltroLista({ campos }: { campos: CampoFiltro[] }) {
               clearTimeout(timer.current);
               timer.current = setTimeout(() => definir(busca.chave, e.target.value.trim()), 350);
             }}
-            className={cn(classeCampo, "pl-9")}
+            className={cn(classeCampo, "h-11 rounded-full pl-10")}
           />
         </div>
       )}

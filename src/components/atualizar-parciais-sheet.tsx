@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { CreditCard, RefreshCw } from "lucide-react";
+import { IconBubble } from "@/components/ds/icon-bubble";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,12 +66,13 @@ export function AtualizarParciaisSheet({
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="secondary" className="w-full">
-          Atualizar
+          <RefreshCw /> Atualizar valores parciais
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="pb-8">
+      <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-3xl pb-8">
         <SheetHeader>
           <SheetTitle>Atualizar faturas</SheetTitle>
+          <p className="text-sm text-muted-foreground">Copie o valor parcial que aparece no app de cada banco.</p>
         </SheetHeader>
 
         {editaveis.length === 0 ? (
@@ -77,11 +80,12 @@ export function AtualizarParciaisSheet({
             Todas as faturas deste mês já estão fechadas.
           </p>
         ) : (
-          <div className="mt-2 flex flex-col gap-4">
+          <div className="mt-2 flex flex-col gap-2">
             {editaveis.map((f) => (
-              <div key={f.card.id} className="flex flex-col gap-1.5">
-                <Label htmlFor={`parcial-${f.card.id}`}>{f.card.nome}</Label>
-                <div className="relative">
+              <div key={f.card.id} className="flex items-center gap-3 rounded-2xl bg-muted/60 p-3">
+                <IconBubble icon={CreditCard} size="sm" shape="square" solid />
+                <Label htmlFor={`parcial-${f.card.id}`} className="min-w-0 flex-1 truncate">{f.card.nome}</Label>
+                <div className="relative w-36 shrink-0">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                     R$
                   </span>
@@ -102,7 +106,7 @@ export function AtualizarParciaisSheet({
         )}
 
         <SheetFooter>
-          <Button onClick={handleSalvar} disabled={pending || editaveis.length === 0}>
+          <Button size="lg" className="w-full" onClick={handleSalvar} disabled={pending || editaveis.length === 0}>
             {pending ? "Salvando…" : "Salvar"}
           </Button>
         </SheetFooter>

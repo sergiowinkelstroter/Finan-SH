@@ -42,12 +42,21 @@ export function EntradaFormDialog({
   usuarios,
   entrada,
   trigger,
+  open: openControlado,
+  onOpenChange,
 }: {
   usuarios: Usuario[];
   entrada?: EntradaExistente;
-  trigger?: React.ReactNode;
+  trigger?: React.ReactNode | null;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openInterno, setOpenInterno] = useState(false);
+  const open = openControlado ?? openInterno;
+  const setOpen = (v: boolean) => {
+    setOpenInterno(v);
+    onOpenChange?.(v);
+  };
   const [pending, startTransition] = useTransition();
 
   const [descricao, setDescricao] = useState(entrada?.descricao ?? "");
@@ -100,6 +109,7 @@ export function EntradaFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+      {trigger !== null && (
       <DialogTrigger asChild>
         {trigger ?? (
           <Button>
@@ -107,6 +117,7 @@ export function EntradaFormDialog({
           </Button>
         )}
       </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{entrada ? "Editar entrada" : "Nova entrada"}</DialogTitle>
