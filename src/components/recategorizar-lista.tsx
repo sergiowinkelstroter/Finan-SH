@@ -158,7 +158,7 @@ export function RecategorizarLista({
                     {i.tipo === "compra" && <Badge variant="info">cartão</Badge>}
                   </span>
                 </span>
-                <span className="whitespace-nowrap font-mono text-sm font-semibold tabular text-tinta">
+                <span className={cn("whitespace-nowrap font-mono text-sm font-semibold tabular", i.previsto ? "text-muted-foreground" : "text-tinta")}>
                   {formatCents(i.valorCents)}
                 </span>
               </button>

@@ -32,7 +32,8 @@ export default async function CategoriaPage({ searchParams }: { searchParams: Pr
   const total =
     nome === CARTAO_SEM_CATEGORIA
       ? faltaNoCartao.reduce((s, f) => s + f.diferencaCents, 0)
-      : itens.reduce((s, i) => s + i.valorCents, 0);
+      : itens.reduce((s, i) => s + (i.previsto ? 0 : i.valorCents), 0);
+  const previsto = itens.reduce((s, i) => s + (i.previsto ? i.valorCents : 0), 0);
   const voltar = `/?${new URLSearchParams(periodoParaQuery(periodo)).toString()}`;
 
   return (
@@ -54,6 +55,9 @@ export default async function CategoriaPage({ searchParams }: { searchParams: Pr
               <p className="text-xs text-muted-foreground">
                 {itens.length} lançamento{itens.length === 1 ? "" : "s"}
               </p>
+            )}
+            {previsto > 0 && (
+              <p className="text-xs text-muted-foreground">+ {formatCents(previsto)} previsto</p>
             )}
           </div>
         </div>

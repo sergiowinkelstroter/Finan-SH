@@ -20,6 +20,14 @@ export function hojeISO(): string {
   return format(agoraSaoPaulo(), "yyyy-MM-dd");
 }
 
+/**
+ * Lançamento ainda "previsto": conta fixa que não chegou no dia (id virtual < 0)
+ * ou saída com data futura. Fica fora dos gastos/acerto até a data chegar.
+ */
+export function ehPrevisto(s: { id: number; data: string }, hoje: string = hojeISO()): boolean {
+  return s.id < 0 || s.data > hoje;
+}
+
 /** Competência (dia 1) do mês atual, no fuso America/Sao_Paulo. */
 export function competenciaAtualISO(): string {
   return format(startOfMonth(agoraSaoPaulo()), "yyyy-MM-dd");

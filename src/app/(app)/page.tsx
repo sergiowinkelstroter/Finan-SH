@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ArrowDownLeft,
+  CalendarClock,
   ArrowRight,
   ArrowUpRight,
   CalendarRange,
@@ -231,6 +232,22 @@ export default async function DashboardPage({
                 valorCents={analise.livreCents}
                 destaque
               />
+              {analise.previstoCents > 0 && (
+                <Link
+                  href={`/saidas?mes=${mesQuery}&ordem=data_asc`}
+                  className="mx-1 flex items-center gap-3 rounded-xl bg-muted/60 px-2 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted"
+                >
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-card text-azul">
+                    <CalendarClock className="size-4" />
+                  </span>
+                  <span className="flex-1">
+                    Ainda vai cair{" "}
+                    <strong className="font-mono tabular text-foreground">{formatCents(analise.previstoCents)}</strong> em{" "}
+                    {analise.qtdPrevistas} conta{analise.qtdPrevistas === 1 ? "" : "s"} prevista{analise.qtdPrevistas === 1 ? "" : "s"}. Elas
+                    entram no gasto no dia delas.
+                  </span>
+                </Link>
+              )}
               <p className="px-3 pb-2 text-[11px] text-muted-foreground">
                 Teto {formatCents(resumo.tetoCents)} · Reserva total {formatCents(resumo.reservaAtualCents)}
               </p>

@@ -9,7 +9,7 @@ import {
   type TipoValor,
 } from "@/lib/calculos";
 import { CARTAO_SEM_CATEGORIA, SEM_CATEGORIA, corCategoria } from "@/lib/categorias";
-import { competenciaLabelCurta } from "@/lib/dates";
+import { competenciaLabelCurta, ehPrevisto, hojeISO } from "@/lib/dates";
 import { fracaoDoMes, periodoAnterior, type Periodo } from "@/lib/periodo";
 import { db } from "@/db";
 import { entradasPorMes } from "./entradas";
@@ -70,11 +70,14 @@ export interface Analise {
   acerto: Acerto;
   usuarios: { id: number; nome: string }[];
   qtdSaidas: number;
+  /** Contas fixas e saídas com data futura dentro do período: ainda não contam como gasto. */
+  previstoCents: number;
+  qtdPrevistas: number;
 }
 
 export async function getAnalise(periodo: Periodo): Promise<Analise> {
   const comps = periodo.competencias;
-  const [cartoes, invoicesRows, parcelas, saidas, entradasMapa, tetosMapa, usuarios, aportes] =
+  const [cartoes, invoicesRows, parcelas, todasSaidas, entradasMapa, tetosMapa, usuarios, aportes] =
     await Promise.all([
       // Todos os cartões: arquivados contam nos meses em que ainda têm parcela/fatura.
       db.query.cards.findMany({ orderBy: (c, { asc }) => [asc(c.nome)] }),
@@ -86,6 +89,11 @@ export async function getAnalise(periodo: Periodo): Promise<Analise> {
       listarUsuarios(),
       listarAportesDoPeriodo(periodo),
     ]);
+
+  // Só conta o que já aconteceu; o resto do período fica como "previsto".
+  const hoje = hojeISO();
+  const previstas = todasSaidas.filter((x) => ehPrevisto(x, hoje));
+  const saidas = todasSaidas.filter((x) => !ehPrevisto(x, hoje));
 
   const faturasPorMes = montarFaturas(cartoes, invoicesRows, parcelas, comps);
 
@@ -211,6 +219,8 @@ export async function getAnalise(periodo: Periodo): Promise<Analise> {
     ),
     usuarios: usuarios.map((u) => ({ id: u.id, nome: u.nome })),
     qtdSaidas: saidas.length,
+    previstoCents: previstas.reduce((t, x) => t + x.valorCents, 0),
+    qtdPrevistas: previstas.length,
   };
 }
 

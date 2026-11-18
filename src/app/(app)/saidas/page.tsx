@@ -13,7 +13,7 @@ import { CategoriaIcone } from "@/components/categoria-icone";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState, SectionLabel } from "@/components/ds";
 import { CATEGORIAS_PADRAO, COR_RESERVA, RESERVA, SEM_CATEGORIA, corCategoria } from "@/lib/categorias";
-import { formatDataCurta, hojeISO } from "@/lib/dates";
+import { ehPrevisto, formatDataCurta, hojeISO } from "@/lib/dates";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatCents, parseReaisParaCents } from "@/lib/money";
@@ -83,9 +83,12 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
   const rotuloDia = (d: string) =>
     d === hoje ? "Hoje" : d > hoje ? `${format(parseISO(d), "EEEE, dd/MM", { locale: ptBR })} · previsto` : format(parseISO(d), "EEEE, dd/MM", { locale: ptBR });
 
-  const total = saidas.reduce((s, x) => s + x.valorCents, 0);
+  const previsto = (x: Item) => x.tipo === "saida" && ehPrevisto(x, hoje);
+  const total = saidas.reduce((s, x) => s + (previsto(x) ? 0 : x.valorCents), 0);
+  const totalPrevisto = saidas.reduce((s, x) => s + (previsto(x) ? x.valorCents : 0), 0);
   const porCategoria = new Map<string, number>();
   for (const s of saidas) {
+    if (previsto(s)) continue;
     const k = s.categoria ?? SEM_CATEGORIA;
     if (s.tipo === "reserva") {
       porCategoria.set(RESERVA, (porCategoria.get(RESERVA) ?? 0) + s.valorCents);
@@ -104,10 +107,11 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
   if (porData) {
     for (const s of saidas) {
       const g = grupos[grupos.length - 1];
+      const v = previsto(s) ? 0 : s.valorCents;
       if (g && g.data === s.data) {
         g.itens.push(s);
-        g.total += s.valorCents;
-      } else grupos.push({ data: s.data, itens: [s], total: s.valorCents });
+        g.total += v;
+      } else grupos.push({ data: s.data, itens: [s], total: v });
     }
   } else {
     grupos.push({ data: "", itens: saidas, total });
@@ -178,6 +182,7 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
         <CardContent className="flex flex-col divide-y divide-border/60 p-0">
           <Stat rotulo="Gastos" valor={formatCents(total - totalReserva)} />
           <Stat rotulo="Reserva (líquido)" valor={formatCents(totalReserva)} />
+          {totalPrevisto > 0 && <Stat rotulo="Previsto (ainda não conta)" valor={formatCents(totalPrevisto)} />}
           <Stat rotulo="Gasto médio/dia" valor={formatCents(Math.round((total - totalReserva) / diasDoPeriodo(periodo)))} />
         </CardContent>
       </Card>
@@ -212,7 +217,13 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
           {grupos.map((g) => (
             <section key={g.data || "todos"} className="flex flex-col gap-1.5">
               {g.data && (
-                <SectionLabel extra={`${g.total < 0 ? "+" : "−"}${formatCents(Math.abs(g.total))}`}>
+                <SectionLabel
+                  extra={
+                    g.itens.every(previsto)
+                      ? `previsto ${formatCents(g.itens.reduce((t, x) => t + x.valorCents, 0))}`
+                      : `${g.total < 0 ? "+" : "−"}${formatCents(Math.abs(g.total))}`
+                  }
+                >
                   <span className="normal-case">{rotuloDia(g.data)}</span>
                 </SectionLabel>
               )}
@@ -233,14 +244,14 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
                           <>
                             <span>{s.categoria ?? "Sem categoria"}</span>
                             {s.pagador && <span>· {s.pagador.nome}</span>}
-                            {s.id < 0 ? <Badge variant="info">previsto</Badge> : s.recorrenciaId && <Badge variant="info">fixa</Badge>}
+                            {ehPrevisto(s, hoje) ? <Badge variant="info">previsto</Badge> : s.recorrenciaId && <Badge variant="info">fixa</Badge>}
                             {!s.compartilhada && <Badge variant="outline">individual</Badge>}
                           </>
                         )}
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-0.5">
-                      <span className={`font-mono text-sm font-semibold tabular ${s.tipo === "reserva" ? "text-menta" : "text-tinta"}`}>
+                      <span className={`font-mono text-sm font-semibold tabular ${s.tipo === "reserva" ? "text-menta" : previsto(s) ? "text-muted-foreground" : "text-tinta"}`}>
                         {s.valorCents < 0 ? "+" : "−"}
                         {formatCents(Math.abs(s.valorCents))}
                       </span>

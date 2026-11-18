@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { cards, installments, purchases } from "@/db/schema";
 import { sugerirCategoria } from "@/lib/categorizacao";
 import { CARTAO_SEM_CATEGORIA, RESERVA, SEM_CATEGORIA } from "@/lib/categorias";
+import { ehPrevisto, hojeISO } from "@/lib/dates";
 import type { Periodo } from "@/lib/periodo";
 import { getFaturasDeMeses } from "./faturas";
 import { contextoCategorizacao } from "./importacao";
@@ -21,6 +22,8 @@ export interface ItemCategoria {
   valorCents: number;
   detalhe: string;
   editavel: boolean;
+  /** Ainda não chegou o dia: aparece na lista, mas fica fora do total. */
+  previsto?: boolean;
   sugestao: string | null;
 }
 
@@ -78,6 +81,7 @@ export async function getLancamentosCategoria(periodo: Periodo, nome: string) {
   const ctx = semCategoria ? await contextoCategorizacao() : null;
   const sugerir = (d: string) => (ctx ? (sugerirCategoria(d, ctx)?.categoria ?? null) : null);
 
+  const hoje = hojeISO();
   const [saidas, parcelas] = await Promise.all([
     listarSaidas(periodo, { categoria: nome, ordem: "data_desc" }),
     db
@@ -129,7 +133,12 @@ export async function getLancamentosCategoria(periodo: Periodo, nome: string) {
       descricao: s.descricao,
       data: s.data,
       valorCents: s.valorCents,
-      detalhe: s.id < 0 ? "conta fixa prevista" : s.recorrenciaId ? "conta fixa" : (s.pagador?.nome ?? "saída"),
+      detalhe: ehPrevisto(s, hoje)
+        ? "prevista · ainda não conta"
+        : s.recorrenciaId
+          ? "conta fixa"
+          : (s.pagador?.nome ?? "saída"),
+      previsto: ehPrevisto(s, hoje),
       editavel: s.id > 0,
       sugestao: s.id > 0 ? sugerir(s.descricao) : null,
     })),
