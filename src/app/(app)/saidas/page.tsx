@@ -1,4 +1,4 @@
-import { Download, PiggyBank, Receipt } from "lucide-react";
+import { Download, Pencil, PiggyBank, Receipt } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -174,7 +174,7 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
       />
 
       <Card>
-        <CardContent className="grid grid-cols-3 gap-3 p-4 text-center">
+        <CardContent className="flex flex-col divide-y divide-border/60 p-0">
           <Stat rotulo="Gastos" valor={formatCents(total - totalReserva)} />
           <Stat rotulo="Reserva" valor={formatCents(totalReserva)} />
           <Stat rotulo="Média/dia" valor={formatCents(Math.round(total / diasDoPeriodo(periodo)))} />
@@ -223,7 +223,7 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
                       cor={s.tipo === "reserva" ? COR_RESERVA : undefined}
                     />
                     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span className="truncate font-medium text-foreground">{s.descricao}</span>
+                      <span className="line-clamp-2 break-words font-medium leading-snug text-foreground sm:truncate">{s.descricao}</span>
                       <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                         {!g.data && <span>{formatDataCurta(s.data)} ·</span>}
                         {s.tipo === "reserva" ? (
@@ -252,8 +252,8 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
                               categorias={usadas}
                               saida={s}
                               trigger={
-                                <Button type="button" variant="ghost" size="sm">
-                                  Editar
+                                <Button type="button" variant="ghost" size="icon" className="size-8" aria-label={`Editar ${s.descricao}`}>
+                                  <Pencil />
                                 </Button>
                               }
                             />
@@ -283,9 +283,9 @@ export default async function SaidasPage({ searchParams }: { searchParams: Promi
 
 function Stat({ rotulo, valor }: { rotulo: string; valor: string }) {
   return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-xs text-muted-foreground">{rotulo}</span>
-      <span className="font-mono text-sm font-semibold tabular text-tinta">{valor}</span>
+    <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+      <span className="text-sm text-muted-foreground">{rotulo}</span>
+      <span className="whitespace-nowrap font-mono text-sm font-semibold tabular text-tinta">{valor}</span>
     </div>
   );
 }

@@ -100,10 +100,10 @@ export default async function ParcelasPage({ searchParams }: { searchParams: Pro
         ]}
       />
 
-      <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
-        <StatCard icon={ShoppingBag} cor="#2e6be6" titulo="Compras" valor={String(compras.length)} className="p-3 lg:p-4" />
-        <StatCard icon={CalendarClock} cor="#6c4cf0" titulo="No período" valor={formatCents(noPeriodo)} className="p-3 lg:p-4" />
-        <StatCard icon={Wallet} cor="#e2496b" titulo="Falta pagar" valor={formatCents(restante)} className="p-3 lg:p-4" />
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-1 [&>*:first-child]:col-span-2 lg:[&>*:first-child]:col-span-1">
+        <StatCard icon={ShoppingBag} cor="#2e6be6" titulo="Compras" valor={String(compras.length)} />
+        <StatCard icon={CalendarClock} cor="#6c4cf0" titulo="No período" valor={formatCents(noPeriodo)} />
+        <StatCard icon={Wallet} cor="#e2496b" titulo="Falta pagar" valor={formatCents(restante)} />
       </div>
 
       </aside>

@@ -23,15 +23,15 @@ export function StatCard({
   className?: string;
 }) {
   return (
-    <Card className={cn("flex flex-col gap-3 p-4", className)}>
-      <div className="flex items-center gap-2">
+    <Card className={cn("@container flex min-w-0 flex-col gap-2.5 p-3.5 sm:p-4", className)}>
+      <div className="flex min-w-0 items-center gap-2">
         <IconBubble icon={icon} cor={cor} size="sm" />
-        <span className="text-xs font-medium text-muted-foreground">{titulo}</span>
+        <span className="min-w-0 flex-1 break-words text-xs font-medium leading-tight text-muted-foreground">{titulo}</span>
       </div>
       <div className="min-w-0">
         <p
           className={cn(
-            "truncate font-mono text-lg font-semibold tabular lg:text-xl",
+            "num-fit font-mono font-semibold tabular",
             tom === "positivo" ? "text-menta" : tom === "negativo" ? "text-rosa" : "text-tinta",
           )}
         >

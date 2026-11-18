@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowDownLeft, ArrowUpRight, PiggyBank, Wallet, Workflow, type LucideIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
@@ -5,6 +6,7 @@ import { SeletorPeriodo } from "@/components/seletor-periodo";
 import { SankeyFluxo } from "@/components/charts/sankey-fluxo";
 import { ParaOndeVai } from "@/components/para-onde-vai";
 import { CategoriaIcone } from "@/components/categoria-icone";
+import { StatCard } from "@/components/ds";
 import { SEM_CATEGORIA } from "@/lib/categorias";
 import { formatCents, formatPercentual } from "@/lib/money";
 import { parsePeriodo } from "@/lib/periodo";
@@ -73,6 +75,7 @@ export default async function FluxoPage({ searchParams }: { searchParams: Promis
               categorias={atual.porCategoria}
               hrefAnalise={`/analises?mes=${mesQuery}`}
               hrefSemCategoria={`/saidas?mes=${mesQuery}&categoria=${encodeURIComponent(SEM_CATEGORIA)}`}
+                queryPeriodo={`mes=${mesQuery}`}
               max={10}
             />
           </CardContent>
@@ -90,7 +93,11 @@ export default async function FluxoPage({ searchParams }: { searchParams: Promis
               const anterior = categoriasAnterior.get(c.nome);
               const delta = anterior ? (total - anterior) / anterior : null;
               return (
-                <div key={c.nome} className="flex items-center gap-3 rounded-xl py-2">
+                <Link
+                  key={c.nome}
+                  href={`/categoria?nome=${encodeURIComponent(c.nome)}&mes=${mesQuery}`}
+                  className="-mx-2 flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-muted/60"
+                >
                   <CategoriaIcone nome={c.nome} cor={c.cor} />
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-sm font-medium text-foreground">{c.nome}</span>
@@ -108,7 +115,7 @@ export default async function FluxoPage({ searchParams }: { searchParams: Promis
                       </span>
                     )}
                   </div>
-                </div>
+                </Link>
               );
             })}
           </CardContent>
@@ -119,7 +126,7 @@ export default async function FluxoPage({ searchParams }: { searchParams: Promis
 }
 
 function Kpi({
-  icon: Icon,
+  icon,
   cor,
   titulo,
   valor,
@@ -132,17 +139,12 @@ function Kpi({
   pct?: number;
 }) {
   return (
-    <Card>
-      <CardContent className="flex items-center gap-3 p-4">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full" style={{ background: `${cor}1f`, color: cor }}>
-          <Icon className="size-5" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-xs text-muted-foreground">{titulo}</p>
-          <p className="truncate font-mono text-base font-semibold tabular text-tinta">{formatCents(valor)}</p>
-          {pct != null && <p className="text-[11px] text-muted-foreground">{formatPercentual(pct)} da renda</p>}
-        </div>
-      </CardContent>
-    </Card>
+    <StatCard
+      icon={icon}
+      cor={cor}
+      titulo={titulo}
+      valor={formatCents(valor)}
+      detalhe={pct != null ? `${formatPercentual(pct)} da renda` : undefined}
+    />
   );
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertCircle, ArrowRight } from "lucide-react";
+import { AlertCircle, ArrowRight, ChevronRight } from "lucide-react";
 import { CategoriaIcone } from "@/components/categoria-icone";
 import { CARTAO_SEM_CATEGORIA, COR_LIVRE, COR_RESERVA, LIVRE, RESERVA, SEM_CATEGORIA } from "@/lib/categorias";
 import { formatCents, formatPercentual } from "@/lib/money";
@@ -21,8 +21,11 @@ export function ParaOndeVai({
   categorias,
   hrefAnalise,
   hrefSemCategoria,
+  queryPeriodo,
   max = 6,
 }: {
+  /** Ex.: "mes=2026-11" — cada fatia vira link para a tela da categoria. */
+  queryPeriodo?: string;
   entradasCents: number;
   reservaCents: number;
   categorias: Fatia[];
@@ -76,11 +79,17 @@ export function ParaOndeVai({
         </div>
       </div>
 
-      <ul className="flex flex-col gap-3">
+      <ul className="flex flex-col gap-1">
         {fatias.map((f) => {
           const pct = f.cents / Math.max(1, entradasCents || base);
           return (
-            <li key={f.nome} className="flex items-center gap-3">
+            <li key={f.nome}>
+              {(() => {
+                const href = queryPeriodo && f.nome !== LIVRE && f.nome !== "Outras"
+                  ? `/categoria?nome=${encodeURIComponent(f.nome)}&${queryPeriodo}`
+                  : null;
+                const conteudo = (
+                  <>
               <CategoriaIcone nome={f.nome} cor={f.cor} size="sm" />
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex items-baseline justify-between gap-2 text-sm">
@@ -96,6 +105,17 @@ export function ParaOndeVai({
                   </span>
                 </div>
               </div>
+                    {href && <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" />}
+                  </>
+                );
+                return href ? (
+                  <Link href={href} className="-mx-2 flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-muted/60 active:bg-muted">
+                    {conteudo}
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-3 py-1.5">{conteudo}</div>
+                );
+              })()}
             </li>
           );
         })}
@@ -111,7 +131,7 @@ export function ParaOndeVai({
             </span>
             <span className="flex flex-wrap gap-3 font-semibold">
               <Link href="/importar" className="underline-offset-2 hover:underline">Importar fatura →</Link>
-              <Link href={hrefSemCategoria} className="underline-offset-2 hover:underline">Ver sem categoria</Link>
+              <Link href={queryPeriodo ? `/categoria?nome=${encodeURIComponent(SEM_CATEGORIA)}&${queryPeriodo}` : hrefSemCategoria} className="underline-offset-2 hover:underline">Categorizar agora</Link>
             </span>
           </span>
         </div>

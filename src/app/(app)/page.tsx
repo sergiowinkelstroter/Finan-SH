@@ -78,7 +78,7 @@ export default async function DashboardPage({
                 {mesAtual ? "Ainda podem gastar" : resumo.estourouTeto ? "Estourou o teto em" : "Sobrou do teto"}
               </p>
               <p
-                className={`mt-1.5 font-display text-[40px] font-semibold leading-none tabular sm:text-[48px] ${
+                className={`mt-1.5 font-display text-[clamp(2rem,11vw,3rem)] font-semibold leading-none tabular ${
                   resumo.estourouTeto ? "text-rosa" : "text-tinta"
                 }`}
               >
@@ -96,7 +96,7 @@ export default async function DashboardPage({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-2 lg:w-[360px] lg:grid-cols-1 lg:gap-2.5">
+          <div className="grid grid-cols-1 gap-2 lg:w-[360px] lg:gap-2.5">
             <MiniStat icon={ArrowDownLeft} cor="#0ea88c" rotulo="Entrou" valor={analise.entradasCents} />
             <MiniStat icon={ArrowUpRight} cor="#e2496b" rotulo="Gastou" valor={analise.gastoCents} />
             <MiniStat icon={PiggyBank} cor="#10b981" rotulo="Guardou" valor={analise.reservaCents} />
@@ -128,6 +128,7 @@ export default async function DashboardPage({
                 categorias={analise.porCategoria}
                 hrefAnalise={`/fluxo?mes=${mesQuery}`}
                 hrefSemCategoria={`/saidas?mes=${mesQuery}&categoria=${encodeURIComponent(SEM_CATEGORIA)}`}
+                queryPeriodo={`mes=${mesQuery}`}
               />
             </CardContent>
           </Card>
@@ -274,14 +275,12 @@ export default async function DashboardPage({
 
 function MiniStat({ icon: Icon, cor, rotulo, valor }: { icon: LucideIcon; cor: string; rotulo: string; valor: number }) {
   return (
-    <div className="flex flex-col gap-2 rounded-2xl bg-muted/60 p-3 lg:flex-row lg:items-center lg:gap-3">
-      <span className="flex size-8 items-center justify-center rounded-full" style={{ background: `${cor}1f`, color: cor }}>
+    <div className="flex items-center gap-3 rounded-2xl bg-muted/60 px-3 py-2.5">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-full" style={{ background: `${cor}1f`, color: cor }}>
         <Icon className="size-4" />
       </span>
-      <span className="flex min-w-0 flex-col lg:flex-1 lg:flex-row lg:items-center lg:justify-between">
-        <span className="text-[11px] text-muted-foreground lg:text-sm">{rotulo}</span>
-        <span className="truncate font-mono text-[13px] font-semibold tabular text-tinta lg:text-base">{formatCents(valor)}</span>
-      </span>
+      <span className="flex-1 text-sm text-muted-foreground">{rotulo}</span>
+      <span className="whitespace-nowrap font-mono text-base font-semibold tabular text-tinta">{formatCents(valor)}</span>
     </div>
   );
 }

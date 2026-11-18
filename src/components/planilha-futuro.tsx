@@ -468,12 +468,12 @@ function Resumo({
   capitalize?: boolean;
 }) {
   return (
-    <Card>
-      <CardContent className="flex flex-col gap-1 p-4">
-        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Icon className="size-3.5" /> {titulo}
+    <Card className="@container min-w-0">
+      <CardContent className="flex flex-col gap-1 p-3.5 sm:p-4">
+        <span className="flex items-start gap-1.5 text-xs leading-tight text-muted-foreground">
+          <Icon className="mt-px size-3.5 shrink-0" /> {titulo}
         </span>
-        <span className={cn("font-mono text-lg font-semibold tabular", capitalize && "capitalize", cor ?? "text-tinta")}>
+        <span className={cn("num-fit font-mono font-semibold tabular", capitalize && "capitalize", cor ?? "text-tinta")}>
           {valor}
         </span>
       </CardContent>

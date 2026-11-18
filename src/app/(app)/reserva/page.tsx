@@ -68,14 +68,14 @@ export default async function ReservaPage({ searchParams }: { searchParams: Prom
             <span className="text-sm text-white/80">Saldo da reserva</span>
           </div>
           <div className="relative">
-            <p className="font-display text-[44px] font-semibold leading-none tabular">{formatCents(reservaAtualCents)}</p>
+            <p className="font-display text-[clamp(2rem,11vw,2.75rem)] font-semibold leading-none tabular">{formatCents(reservaAtualCents)}</p>
             {meta && (
               <p className="mt-2 flex items-center gap-1.5 text-sm text-white/80">
                 <Target className="size-4" /> meta de {formatCents(meta.metaCents)}
               </p>
             )}
           </div>
-          <div className="relative grid grid-cols-2 gap-2">
+          <div className="relative grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
             <div className="rounded-2xl bg-white/12 p-3 ring-1 ring-white/15">
               <span className="flex items-center gap-1 text-[11px] text-white/75">
                 <ArrowDownLeft className="size-3.5" /> Guardado no período

@@ -31,12 +31,12 @@ export function ListItem({
     <div className={cn("flex items-center gap-3 px-4 py-3", muted && "opacity-60", className)}>
       {leading}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="truncate font-medium text-foreground">{titulo}</div>
+        <div className="line-clamp-2 break-words font-medium leading-snug text-foreground sm:truncate">{titulo}</div>
         {subtitulo && (
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">{subtitulo}</div>
         )}
       </div>
-      {trailing && <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">{trailing}</div>}
+      {trailing && <div className="flex shrink-0 flex-col items-end gap-0.5 whitespace-nowrap text-right">{trailing}</div>}
       {acoes && <div className="-mr-2 flex shrink-0 items-center">{acoes}</div>}
     </div>
   );

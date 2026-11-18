@@ -59,16 +59,16 @@ export default async function FaturasPage({ searchParams }: { searchParams: Prom
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
           <aside className="flex flex-col gap-4 lg:sticky lg:top-6 lg:order-2">
             <SeletorPeriodo periodo={periodo} permitirIntervalo={false} />
-            <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
-              <StatCard icon={Receipt} cor="#6c4cf0" titulo="Total do mês" valor={formatCents(total)} className="p-3 lg:p-4" />
-              <StatCard icon={CheckCircle2} cor="#0ea88c" titulo="Já pago" valor={formatCents(pagas)} tom="positivo" className="p-3 lg:p-4" />
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-1 [&>*:first-child]:col-span-2 lg:[&>*:first-child]:col-span-1">
+              <StatCard icon={Receipt} cor="#6c4cf0" titulo="Total do mês" valor={formatCents(total)} />
+              <StatCard icon={CheckCircle2} cor="#0ea88c" titulo="Já pago" valor={formatCents(pagas)} tom="positivo" />
               <StatCard
                 icon={Hourglass}
                 cor="#e2496b"
                 titulo="A pagar"
                 valor={formatCents(total - pagas)}
                 tom={total - pagas > 0 ? "negativo" : "neutro"}
-                className="p-3 lg:p-4"
+               
               />
             </div>
             <AtualizarParciaisSheet key={competencia} faturas={todas} competencia={competencia} />
